@@ -1,5 +1,22 @@
 import { SaleStatus, TicketType } from '@prisma/client';
 
+export const adminUserSeed = [
+  {
+    email: 'admin@miniticket.local',
+    id: 'seed-admin-super',
+    name: '超级管理员',
+    password: 'Admin123!',
+    role: 'ADMIN',
+  },
+  {
+    email: 'ops@miniticket.local',
+    id: 'seed-admin-ops',
+    name: '现场运营',
+    password: 'Ops12345!',
+    role: 'OPERATIONS',
+  },
+] as const;
+
 export const ticketingDemoSeed = {
   event: {
     city: 'Shanghai',
@@ -33,7 +50,12 @@ export const ticketingDemoSeed = {
       inventory: 120,
       name: 'VIP Standing',
       price: 799,
+      purchaseLimit: 4,
+      refundDeadlineAt: new Date('2026-04-29T16:00:00.000Z'),
+      refundable: true,
+      requiresRealName: true,
       sessionId: 'seed-session-beta-night-1',
+      sortOrder: 1,
       ticketType: TicketType.E_TICKET,
     },
     {
@@ -41,7 +63,12 @@ export const ticketingDemoSeed = {
       inventory: 360,
       name: 'Standard Standing',
       price: 399,
+      purchaseLimit: 4,
+      refundDeadlineAt: undefined,
+      refundable: false,
+      requiresRealName: true,
       sessionId: 'seed-session-beta-night-1',
+      sortOrder: 2,
       ticketType: TicketType.E_TICKET,
     },
   ],

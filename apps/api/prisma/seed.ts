@@ -1,11 +1,38 @@
+import { createHash } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 
-import { ticketingDemoSeed } from './seed-data';
+import { adminUserSeed, ticketingDemoSeed } from './seed-data';
+
+function hashPassword(password: string) {
+  return `sha256:${createHash('sha256').update(password).digest('hex')}`;
+}
 
 async function main() {
   const prisma = new PrismaClient();
 
   try {
+    for (const user of adminUserSeed) {
+      await prisma.user.upsert({
+        where: {
+          email: user.email,
+        },
+        create: {
+          email: user.email,
+          enabled: true,
+          id: user.id,
+          name: user.name,
+          passwordHash: hashPassword(user.password),
+          role: user.role,
+        },
+        update: {
+          enabled: true,
+          name: user.name,
+          passwordHash: hashPassword(user.password),
+          role: user.role,
+        },
+      });
+    }
+
     await prisma.event.upsert({
       where: {
         id: ticketingDemoSeed.event.id,
@@ -52,14 +79,19 @@ async function main() {
           inventory: tier.inventory,
           name: tier.name,
           price: tier.price,
+          purchaseLimit: tier.purchaseLimit,
+          refundDeadlineAt: tier.refundDeadlineAt,
+          refundable: tier.refundable,
+          requiresRealName: tier.requiresRealName,
           sessionId: tier.sessionId,
+          sortOrder: tier.sortOrder,
           ticketType: tier.ticketType,
         },
       });
     }
 
     console.log(
-      `Seeded event ${ticketingDemoSeed.event.id} with ${ticketingDemoSeed.ticketTiers.length} ticket tiers.`,
+      `Seeded ${adminUserSeed.length} admin users, event ${ticketingDemoSeed.event.id}, and ${ticketingDemoSeed.ticketTiers.length} ticket tiers.`,
     );
   } finally {
     await prisma.$disconnect();

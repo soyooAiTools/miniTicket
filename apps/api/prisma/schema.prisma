@@ -66,13 +66,44 @@ enum RefundStatus {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  role         UserRole
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  role          UserRole
+  enabled       Boolean        @default(true)
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  adminSessions AdminSession[]
+  auditLogs     AdminAuditLog[]
+  orderFlags    OrderFlag[]
+  orderNotes    OrderNote[]
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  targetType String
+  targetId   String
+  payload    Json?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([targetType, targetId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Viewer {
@@ -142,16 +173,21 @@ model EventSession {
 }
 
 model TicketTier {
-  id         String       @id @default(cuid())
-  sessionId  String
-  name       String
-  price      Int
-  inventory  Int
-  ticketType TicketType
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  session    EventSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[]
+  id               String       @id @default(cuid())
+  sessionId        String
+  name             String
+  price            Int
+  inventory        Int
+  purchaseLimit    Int          @default(4)
+  requiresRealName Boolean      @default(true)
+  refundable       Boolean      @default(false)
+  refundDeadlineAt DateTime?
+  sortOrder        Int          @default(0)
+  ticketType       TicketType
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  session          EventSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  orderItems       OrderItem[]
 
   @@index([sessionId])
 }
@@ -170,8 +206,35 @@ model Order {
   payments       Payment[]
   fulfillments   FulfillmentEvent[]
   refundRequests RefundRequest[]
+  notes          OrderNote[]
+  flags          OrderFlag[]
 
   @@index([userId, createdAt])
+}
+
+model OrderNote {
+  id              String   @id @default(cuid())
+  orderId         String
+  content         String
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy       User     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+}
+
+model OrderFlag {
+  id              String   @id @default(cuid())
+  orderId         String
+  type            String
+  note            String?
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy       User     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
 }
 
 model OrderItem {
@@ -221,20 +284,25 @@ model FulfillmentEvent {
 }
 
 model RefundRequest {
-  id              String       @id @default(cuid())
-  orderId         String
-  refundNo        String       @unique
-  reason          String
-  status          RefundStatus @default(REVIEWING)
-  requestedAmount Int
-  serviceFee      Int
-  refundAmount    Int
-  requestedBy     String?
-  requestedAt     DateTime     @default(now())
-  processedAt     DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  order           Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id                String       @id @default(cuid())
+  orderId           String
+  refundNo          String       @unique
+  reason            String
+  status            RefundStatus @default(REVIEWING)
+  requestedAmount   Int
+  serviceFee        Int
+  refundAmount      Int
+  requestedBy       String?
+  requestedAt       DateTime     @default(now())
+  processedAt       DateTime?
+  reviewedByUserId  String?
+  reviewNote        String?
+  rejectionReason   String?
+  processedByUserId String?
+  lastHandledAt     DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  order             Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, requestedAt])
 }
