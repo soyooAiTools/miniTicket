@@ -1,16 +1,22 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { useState } from 'react';
 
 import type { EventCatalogSummary } from '../../../../../packages/contracts/src';
+import {
+  AppBottomNav,
+  EmptyState,
+  PageHero,
+  PageShell,
+  PosterEventCard,
+  PrimaryButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../../components/ui';
 import { request } from '../../services/request';
-
-const cardStyle = {
-  background: '#ffffff',
-  borderRadius: '16px',
-  marginBottom: '16px',
-  padding: '16px',
-};
+import { buildHomeCollections } from '../../ui/home-sections';
+import { formatCurrencyCny } from '../../ui/formatters';
+import { getSaleStatusMeta } from '../../ui/status';
 
 export default function HomePage() {
   const [events, setEvents] = useState<EventCatalogSummary[]>([]);
@@ -21,7 +27,7 @@ export default function HomePage() {
         url: '/catalog/events',
       });
 
-      setEvents((response.items ?? []).slice(0, 3));
+      setEvents(response.items ?? []);
     } catch {
       Taro.showToast({
         icon: 'none',
@@ -34,83 +40,160 @@ export default function HomePage() {
     void loadEvents();
   });
 
+  const { hotSale, ranking, saleCalendar, upcoming } = buildHomeCollections(events);
+
   return (
-    <View
-      className='page home-page'
-      style={{ background: '#f5f5f5', minHeight: '100vh', padding: '16px' }}
-    >
-      <View className='page__header' style={cardStyle}>
-        <Text
-          className='page__title'
-          style={{ display: 'block', fontSize: '24px', fontWeight: 'bold' }}
-        >
-          近期演唱会情报
-        </Text>
-        <Text
-          className='page__description'
-          style={{ color: '#666', display: 'block', marginTop: '8px' }}
-        >
-          浏览最新开票、售票中的演出项目，直接进入详情和下单入口。
-        </Text>
-      </View>
-
-      <View style={cardStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          热门演出
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          当前展示最近同步的 3 条演出信息。
-        </Text>
-      </View>
-
-      {events.map((event) => (
-        <View key={event.id} style={cardStyle}>
-          <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-            {event.title}
-          </Text>
-          <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-            {event.city} · {event.venueName}
-          </Text>
-          <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-            售票状态：{event.saleStatus} · 起价 ¥{event.minPrice}
-          </Text>
-          <Button
-            size='mini'
-            style={{ marginTop: '12px' }}
-            onClick={() =>
-              Taro.navigateTo({
-                url: `/pages/event-detail/index?id=${event.id}`,
-              })
-            }
-          >
-            查看详情
-          </Button>
+    <PageShell>
+      <PageHero
+        description='一眼看到平台正在热卖、即将开售和值得优先决策的热门演出。'
+        eyebrow='MiniTicket'
+        title='官方票务平台'
+      >
+        <View className='pill-row'>
+          <View className='pill-row__item'>多场活动同屏管理</View>
+          <View className='pill-row__item'>官方票务链路</View>
+          <View className='pill-row__item'>实名购票</View>
+          <View className='pill-row__item'>售后规则透明</View>
         </View>
-      ))}
+      </PageHero>
 
-      <View style={cardStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          快捷入口
-        </Text>
-        <Button
-          style={{ marginTop: '12px' }}
-          onClick={() => Taro.navigateTo({ url: '/pages/events/index' })}
-        >
-          查看全部演出
-        </Button>
-        <Button
-          style={{ marginTop: '12px' }}
-          onClick={() => Taro.navigateTo({ url: '/pages/orders/index' })}
-        >
-          我的订单
-        </Button>
-        <Button
-          style={{ marginTop: '12px' }}
-          onClick={() => Taro.navigateTo({ url: '/pages/me/index' })}
-        >
-          个人中心
-        </Button>
-      </View>
-    </View>
+      <SectionHeading
+        description='优先展示现在就能进入购票链路的热卖场次。'
+        eyebrow='Hot sale'
+        title='正在热卖'
+      />
+      {hotSale.length === 0 ? (
+        <SurfaceCard>
+          <EmptyState
+            description='当前还没有热卖中的演出，稍后刷新看看新的上架场次。'
+            title='暂无热卖演出'
+          />
+        </SurfaceCard>
+      ) : (
+        hotSale.map((event) => (
+          <PosterEventCard
+            key={event.id}
+            coverImageUrl={event.coverImageUrl}
+            description={event.description ?? '已同步该场次的官方票务信息和售卖状态。'}
+            eyebrow={event.city}
+            footer={
+              <PrimaryButton
+                onClick={() =>
+                  Taro.navigateTo({
+                    url: `/pages/event-detail/index?id=${event.id}`,
+                  })
+                }
+              >
+                查看详情
+              </PrimaryButton>
+            }
+            metaLine={`${event.city} · ${event.venueName}`}
+            secondaryMeta={`起售价格 ${formatCurrencyCny(event.minPrice)}`}
+            statusMeta={getSaleStatusMeta(event.saleStatus)}
+            title={event.title}
+          />
+        ))
+      )}
+
+      <SurfaceCard>
+        <SectionHeading
+          description='提前看清近期平台的开售节奏，方便安排提醒和抢票准备。'
+          eyebrow='Calendar'
+          title='开售日历'
+        />
+        {saleCalendar.length === 0 ? (
+          <EmptyState
+            description='暂时没有新的待开售场次。'
+            title='暂无开售提醒'
+          />
+        ) : (
+          saleCalendar.map((event) => (
+            <View key={event.id} className='calendar-item'>
+              <Text className='calendar-item__title'>{event.title}</Text>
+              <Text className='calendar-item__meta'>
+                {event.city} · {event.venueName} · 即将开售
+              </Text>
+            </View>
+          ))
+        )}
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <SectionHeading
+          description='帮助用户先锁定当前平台关注度最高的场次。'
+          eyebrow='Ranking'
+          title='热门榜单'
+        />
+        {ranking.length === 0 ? (
+          <EmptyState
+            description='榜单会随着热卖场次自动更新。'
+            title='暂无榜单数据'
+          />
+        ) : (
+          <View className='rank-list'>
+            {ranking.map((event, index) => (
+              <View key={event.id} className='rank-list__item'>
+                <Text className='rank-list__index'>{index + 1}</Text>
+                <View>
+                  <Text className='calendar-item__title'>{event.title}</Text>
+                  <Text className='calendar-item__meta'>
+                    {event.city} · {formatCurrencyCny(event.minPrice)}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </SurfaceCard>
+
+      <SurfaceCard muted>
+        <SectionHeading
+          description='先浏览还未开售的场次，决定是否提前准备观演人信息。'
+          eyebrow='Upcoming'
+          title='即将开售'
+        />
+        {upcoming.length === 0 ? (
+          <EmptyState
+            description='近期没有新的待开售场次。'
+            title='暂无即将开售演出'
+          />
+        ) : (
+          upcoming.map((event) => (
+            <View key={event.id} className='calendar-item'>
+              <Text className='calendar-item__title'>{event.title}</Text>
+              <Text className='calendar-item__meta'>
+                {event.city} · {event.venueName} · 起售价格 {formatCurrencyCny(event.minPrice)}
+              </Text>
+            </View>
+          ))
+        )}
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <SectionHeading
+          description='核心入口保持清晰，方便快速返回找票和处理订单。'
+          eyebrow='Quick access'
+          title='快捷入口'
+        />
+        <View className='toolbar-grid'>
+          <View
+            className='toolbar-grid__item'
+            onClick={() => Taro.reLaunch({ url: '/pages/events/index' })}
+          >
+            <Text className='toolbar-grid__title'>全部演出</Text>
+            <Text className='toolbar-grid__description'>进入平台完整的演出卡片流</Text>
+          </View>
+          <View
+            className='toolbar-grid__item'
+            onClick={() => Taro.reLaunch({ url: '/pages/orders/index' })}
+          >
+            <Text className='toolbar-grid__title'>订单中心</Text>
+            <Text className='toolbar-grid__description'>查看支付、出票和售后状态</Text>
+          </View>
+        </View>
+      </SurfaceCard>
+
+      <AppBottomNav activeKey='home' />
+    </PageShell>
   );
 }

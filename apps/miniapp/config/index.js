@@ -1,12 +1,7 @@
 import { defineConfig } from '@tarojs/cli';
 
-export default defineConfig({
+const sharedConfig = {
   compiler: 'webpack5',
-  defineConstants: {
-    'process.env.TARO_APP_API_BASE_URL': JSON.stringify(
-      process.env.TARO_APP_API_BASE_URL ?? 'https://beta.example.com/api',
-    ),
-  },
   designWidth: 750,
   deviceRatio: {
     375: 2,
@@ -19,4 +14,13 @@ export default defineConfig({
   plugins: [],
   projectName: 'miniapp',
   sourceRoot: 'src',
+};
+
+export default defineConfig((merge, { mode }) => {
+  const envConfig =
+    mode === 'development' || process.env.NODE_ENV === 'development'
+      ? require('./dev')
+      : require('./prod');
+
+  return merge({}, sharedConfig, envConfig);
 });

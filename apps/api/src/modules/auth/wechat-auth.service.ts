@@ -14,7 +14,13 @@ type WechatCode2SessionResponse = {
 export class WechatAuthService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async loginWithCode(code: string) {
+  private async exchangeCodeForOpenId(code: string) {
+    const devOpenId = process.env.WECHAT_DEV_LOGIN_OPEN_ID?.trim();
+
+    if (devOpenId && process.env.NODE_ENV !== 'production') {
+      return devOpenId;
+    }
+
     const requestUrl = new URL('https://api.weixin.qq.com/sns/jscode2session');
     requestUrl.search = new URLSearchParams({
       appid: process.env.WECHAT_APP_ID ?? '',
@@ -43,10 +49,16 @@ export class WechatAuthService {
       );
     }
 
+    return payload.openid;
+  }
+
+  async loginWithCode(code: string) {
+    const openId = await this.exchangeCodeForOpenId(code);
+
     const customer = await this.prisma.customerAccount.upsert({
-      where: { wechatOpenId: payload.openid },
+      where: { wechatOpenId: openId },
       update: {},
-      create: { wechatOpenId: payload.openid },
+      create: { wechatOpenId: openId },
       select: { id: true, wechatOpenId: true },
     });
 

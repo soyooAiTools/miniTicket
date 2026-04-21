@@ -3,12 +3,13 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "nest start --watch",
+    "dev": "ts-node --transpile-only src/main.ts",
     "start:prod": "node dist/apps/api/src/main.js",
     "test": "jest",
     "test:e2e": "jest --config test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts",
     "lint": "eslint src --ext .ts"
   },
   "jest": {

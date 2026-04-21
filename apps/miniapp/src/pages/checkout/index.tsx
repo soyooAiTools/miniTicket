@@ -1,8 +1,15 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
 import { useState } from 'react';
 
 import type { WechatPaymentIntent } from '../../../../../packages/contracts/src';
+import {
+  PageHero,
+  PageShell,
+  PrimaryButton,
+  StickyActionBar,
+  SurfaceCard,
+} from '../../components/ui';
 import { request } from '../../services/request';
 import { startWechatPay } from '../../utils/pay';
 import { type CheckoutParams, parseCheckoutParams } from './checkout-state';
@@ -12,13 +19,6 @@ import {
   resolvePayableOrderId,
   writeStoredDraftOrderId,
 } from './payment-session';
-
-const sectionStyle = {
-  background: '#ffffff',
-  borderRadius: '16px',
-  marginBottom: '16px',
-  padding: '16px',
-};
 
 export default function CheckoutPage() {
   const [checkoutParams, setCheckoutParams] = useState<CheckoutParams | null>(null);
@@ -124,63 +124,59 @@ export default function CheckoutPage() {
   };
 
   return (
-    <View
-      className='page checkout-page'
-      style={{ background: '#f5f5f5', minHeight: '100vh', padding: '16px' }}
-    >
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '24px', fontWeight: 'bold' }}>
-          确认支付
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          创建草稿订单后，将拉起微信支付并跳转到支付结果页。
-        </Text>
-      </View>
+    <PageShell dense>
+      <PageHero
+        description='确认票档、观演人和须知后，发起微信支付。'
+        eyebrow='Checkout'
+        title='确认支付'
+      />
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          当前选择
-        </Text>
+      <SurfaceCard>
+        <Text className='section-heading__eyebrow'>Selection</Text>
+        <Text className='section-heading__title'>当前选择</Text>
         {checkoutParams ? (
-          <>
-            <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-              场次票档：{checkoutParams.tierId}
+          <View style={{ marginTop: '18px' }}>
+            <Text className='calendar-item__meta'>票档 ID：{checkoutParams.tierId}</Text>
+            <Text className='calendar-item__meta'>
+              观演人：{checkoutParams.viewerIds.join('、')}
             </Text>
-            <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-              观演人：{checkoutParams.viewerIds.join(', ')}
+            <Text className='calendar-item__meta'>
+              数量：{checkoutParams.quantity} · 票种：
+              {checkoutParams.ticketType === 'PAPER_TICKET' ? '纸质票' : '电子票'}
             </Text>
-            <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-              数量：{checkoutParams.quantity} · 票种：{checkoutParams.ticketType}
-            </Text>
-          </>
+          </View>
         ) : (
-          <Text style={{ color: '#b45309', display: 'block', marginTop: '8px' }}>
-            当前未接收到有效的票档或观演人信息，请返回上一页重新选择。
+          <Text className='calendar-item__meta'>
+            当前没有可用于支付的票档或观演人信息。
           </Text>
         )}
-      </View>
+      </SurfaceCard>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          购票须知
+      <SurfaceCard muted>
+        <Text className='section-heading__eyebrow'>Rules</Text>
+        <Text className='section-heading__title'>购票须知</Text>
+        <Text className='calendar-item__meta'>
+          观演人信息在出票前将作为实名履约依据，请确保填写准确。
         </Text>
-        <Text style={{ color: '#444', display: 'block', lineHeight: '24px', marginTop: '12px' }}>
-          观演人信息在出票前不可修改。电子票最晚演出前三天确认，纸质票最晚演出前七天确认。
+        <Text className='calendar-item__meta'>
+          电子票最晚演出前三天确认，纸质票最晚演出前七天确认。
         </Text>
-        <Text style={{ color: '#444', display: 'block', lineHeight: '24px', marginTop: '12px' }}>
-          临演前三天因用户信息错误导致无法录入的，按 20% 服务费处理。
+        <Text className='calendar-item__meta'>
+          因用户信息错误导致无法录入的，将按规则扣除服务费。
         </Text>
-      </View>
+      </SurfaceCard>
 
-      <Button
-        disabled={isSubmitting || !checkoutParams}
-        loading={isSubmitting}
-        onClick={() => {
-          void handlePay();
-        }}
-      >
-        {isSubmitting ? '正在发起支付...' : payableOrderId ? '继续支付' : '立即支付'}
-      </Button>
-    </View>
+      <StickyActionBar>
+        <PrimaryButton
+          disabled={isSubmitting || !checkoutParams}
+          loading={isSubmitting}
+          onClick={() => {
+            void handlePay();
+          }}
+        >
+          {isSubmitting ? '正在发起支付' : payableOrderId ? '继续支付' : '立即支付'}
+        </PrimaryButton>
+      </StickyActionBar>
+    </PageShell>
   );
 }

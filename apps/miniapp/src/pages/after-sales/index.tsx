@@ -1,27 +1,26 @@
-import { Button, Input, Text, View } from '@tarojs/components';
+import { Input, Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useLoad, useRouter } from '@tarojs/taro';
 import { useState } from 'react';
 
 import type { OrderDetail } from '../../../../../packages/contracts/src';
+import {
+  EmptyState,
+  PageHero,
+  PageShell,
+  PrimaryButton,
+  SectionHeading,
+  StickyActionBar,
+  SurfaceCard,
+} from '../../components/ui';
 import { request } from '../../services/request';
+import { formatCurrencyCny } from '../../ui/formatters';
+import { getRefundEntrySummary } from '../../ui/order-presenters';
 
 type RefundReasonCode = 'USER_IDENTITY_ERROR' | 'OTHER';
 
 type RefundPreview = {
   refundAmount: number;
   serviceFee: number;
-};
-
-const sectionStyle = {
-  background: '#ffffff',
-  borderRadius: '16px',
-  marginBottom: '16px',
-  padding: '16px',
-};
-
-const reasonButtonStyle = {
-  marginRight: '8px',
-  marginTop: '12px',
 };
 
 function parseDaysBeforeStart(value: string) {
@@ -77,7 +76,7 @@ export default function AfterSalesPage() {
     if (!orderId) {
       Taro.showToast({
         icon: 'none',
-        title: 'Missing order id',
+        title: '缺少订单编号',
       });
     }
   });
@@ -97,16 +96,23 @@ export default function AfterSalesPage() {
       .catch(() => {
         Taro.showToast({
           icon: 'none',
-          title: 'Failed to load order',
+          title: '订单加载失败',
         });
       });
   });
+
+  const refundSummary = orderDetail
+    ? getRefundEntrySummary({
+        refundEntryEnabled: orderDetail.refundEntryEnabled,
+        status: orderDetail.status,
+      })
+    : null;
 
   const handleSubmit = async () => {
     if (!orderId) {
       Taro.showToast({
         icon: 'none',
-        title: 'Missing order id',
+        title: '缺少订单编号',
       });
       return;
     }
@@ -126,7 +132,7 @@ export default function AfterSalesPage() {
 
       Taro.showToast({
         icon: 'success',
-        title: 'Refund requested',
+        title: '退款申请已提交',
       });
 
       setTimeout(() => {
@@ -140,71 +146,95 @@ export default function AfterSalesPage() {
         title:
           error instanceof Error && error.message
             ? error.message
-            : 'Refund request failed',
+            : '退款申请提交失败',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!orderId) {
+    return (
+      <PageShell dense>
+        <SurfaceCard>
+          <EmptyState
+            description='请从订单详情页进入售后申请。'
+            title='缺少订单信息'
+          />
+        </SurfaceCard>
+      </PageShell>
+    );
+  }
+
   return (
-    <View
-      className='page after-sales-page'
-      style={{ background: '#f5f5f5', minHeight: '100vh', padding: '16px' }}
-    >
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '24px', fontWeight: 'bold' }}>
-          Refund Request
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          Order: {(orderDetail?.orderNumber ?? orderId) || 'unknown'}
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          This page now submits a live refund request instead of placeholder copy.
-        </Text>
-      </View>
+    <PageShell dense>
+      <PageHero
+        description='提前确认扣费规则、退款金额预估和售后原因，再提交申请。'
+        eyebrow='After-sales'
+        title='退款申请'
+      >
+        <View className='pill-row'>
+          <View className='pill-row__item'>{orderDetail?.orderNumber ?? orderId}</View>
+          {refundSummary ? <View className='pill-row__item'>{refundSummary.title}</View> : null}
+        </View>
+      </PageHero>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          Refund reason
-        </Text>
-        <Button
-          size='mini'
-          style={reasonButtonStyle}
-          type={reasonCode === 'USER_IDENTITY_ERROR' ? 'primary' : 'default'}
-          onClick={() => {
-            setReasonCode('USER_IDENTITY_ERROR');
-            void refreshPreview(
-              'USER_IDENTITY_ERROR',
-              daysBeforeStart,
-              orderDetail?.totalAmount,
-            );
-          }}
-        >
-          Identity info error
-        </Button>
-        <Button
-          size='mini'
-          style={reasonButtonStyle}
-          type={reasonCode === 'OTHER' ? 'primary' : 'default'}
-          onClick={() => {
-            setReasonCode('OTHER');
-            void refreshPreview('OTHER', daysBeforeStart, orderDetail?.totalAmount);
-          }}
-        >
-          Other
-        </Button>
+      <SurfaceCard>
+        <SectionHeading
+          description='先确认当前订单是否已经开放售后入口。'
+          eyebrow='Eligibility'
+          title='当前售后状态'
+        />
+        {refundSummary ? (
+          <>
+            <Text className='calendar-item__title'>{refundSummary.title}</Text>
+            <Text className='calendar-item__meta'>{refundSummary.description}</Text>
+          </>
+        ) : (
+          <Text className='calendar-item__meta'>正在同步订单售后状态。</Text>
+        )}
+      </SurfaceCard>
 
-        <Text
-          style={{
-            display: 'block',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            marginTop: '20px',
-          }}
-        >
-          Days before start
-        </Text>
+      <SurfaceCard>
+        <SectionHeading
+          description='不同原因和演出开始时间，会影响服务费和退款金额。'
+          eyebrow='Reason'
+          title='申请原因'
+        />
+        <View className='selector-row'>
+          <View
+            className={
+              reasonCode === 'USER_IDENTITY_ERROR'
+                ? 'selector-chip selector-chip--active'
+                : 'selector-chip'
+            }
+            onClick={() => {
+              setReasonCode('USER_IDENTITY_ERROR');
+              void refreshPreview(
+                'USER_IDENTITY_ERROR',
+                daysBeforeStart,
+                orderDetail?.totalAmount,
+              );
+            }}
+          >
+            <Text className='selector-chip__label'>身份信息错误</Text>
+          </View>
+          <View
+            className={
+              reasonCode === 'OTHER'
+                ? 'selector-chip selector-chip--active'
+                : 'selector-chip'
+            }
+            onClick={() => {
+              setReasonCode('OTHER');
+              void refreshPreview('OTHER', daysBeforeStart, orderDetail?.totalAmount);
+            }}
+          >
+            <Text className='selector-chip__label'>其他原因</Text>
+          </View>
+        </View>
+
+        <Text className='section-caption'>距开演剩余天数</Text>
         <Input
           type='number'
           value={daysBeforeStartText}
@@ -217,44 +247,53 @@ export default function AfterSalesPage() {
               orderDetail?.totalAmount,
             );
           }}
-          placeholder='Enter remaining days'
-          style={{
-            background: '#f9fafb',
-            borderRadius: '12px',
-            marginTop: '12px',
-            padding: '12px',
-          }}
+          placeholder='请输入剩余天数'
+          className='soft-input'
         />
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          For identity-info errors within 3 days before the event, a 20% service
-          fee will be deducted.
+        <Text className='calendar-item__meta'>
+          若因身份信息错误且距开演 3 天内发起售后，会按规则扣除 20% 服务费。
         </Text>
-      </View>
+      </SurfaceCard>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          Calculation preview
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          Original paid amount: {orderDetail?.totalAmount ?? '--'}
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          Service fee: {preview?.serviceFee ?? '--'}
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          Refund amount: {preview?.refundAmount ?? '--'}
-        </Text>
-      </View>
+      <SurfaceCard muted>
+        <SectionHeading
+          description='计算结果会随着原因和时间变化实时刷新。'
+          eyebrow='Preview'
+          title='退款测算'
+        />
+        <View className='summary-grid'>
+          <View className='summary-grid__item'>
+            <Text className='summary-grid__label'>原支付金额</Text>
+            <Text className='summary-grid__value'>
+              {orderDetail ? formatCurrencyCny(orderDetail.totalAmount) : '--'}
+            </Text>
+          </View>
+          <View className='summary-grid__item'>
+            <Text className='summary-grid__label'>服务费</Text>
+            <Text className='summary-grid__value'>
+              {preview ? formatCurrencyCny(preview.serviceFee) : '--'}
+            </Text>
+          </View>
+          <View className='summary-grid__item'>
+            <Text className='summary-grid__label'>预计退款</Text>
+            <Text className='summary-grid__value'>
+              {preview ? formatCurrencyCny(preview.refundAmount) : '--'}
+            </Text>
+          </View>
+        </View>
+      </SurfaceCard>
 
-      <Button
-        disabled={!orderId || isSubmitting}
-        loading={isSubmitting}
-        onClick={() => {
-          void handleSubmit();
-        }}
-      >
-        {isSubmitting ? 'Submitting...' : 'Submit refund request'}
-      </Button>
-    </View>
+      <StickyActionBar>
+        <PrimaryButton
+          disabled={!refundSummary?.eligible || isSubmitting}
+          loading={isSubmitting}
+          onClick={() => {
+            void handleSubmit();
+          }}
+        >
+          {isSubmitting ? '提交中' : '提交退款申请'}
+        </PrimaryButton>
+      </StickyActionBar>
+    </PageShell>
   );
 }

@@ -13,15 +13,31 @@ Monorepo for an authorized ticketing platform with a Nest API, a Taro miniapp, a
 ## Common Commands
 
 - `corepack pnpm install`
+- `corepack pnpm dev:infra`
+- `corepack pnpm bootstrap:local`
 - `corepack pnpm dev:api`
 - `corepack pnpm dev:admin`
 - `corepack pnpm dev:miniapp`
 - `corepack pnpm lint`
 - `corepack pnpm test`
 
+## 本地小程序联调
+
+如果你现在的目标是先把小程序主流程跑起来，而不是立刻打真实微信支付，可以走这条本地联调路径：
+
+1. 复制 `.env.example` 到 `.env`，先把 `ADMIN_API_SECRET`、`JWT_SECRET`、`VIEWER_ID_CARD_KEY` 填好。
+2. 把 `WECHAT_DEV_LOGIN_OPEN_ID` 设成任意固定值，例如 `dev-miniapp-openid`。开发环境下 API 会跳过真实 `jscode2session`。
+3. 把 `WECHAT_PAY_DEV_MOCK=true`、`TARO_APP_MOCK_WECHAT_PAY=true` 和 `VENDOR_DEV_MOCK=true` 打开。这样结账页会走本地 mock 支付闭环，上游出票/退款提交通道也不会依赖真实 vendor 配置。
+4. 执行 `corepack pnpm dev:infra` 启动 `Postgres + Redis`。
+5. 执行 `corepack pnpm bootstrap:local`，自动完成 Prisma Client 生成、迁移和演出种子数据初始化。
+6. 分别启动 `corepack pnpm dev:api` 和 `corepack pnpm dev:miniapp`。
+7. 打开小程序后，先走一遍 `演出列表 -> 演出详情 -> 添加观演人 -> 创建草稿单 -> mock 支付 -> 订单详情`。
+
+本地 seed 会写入一场已发布、已开售的演出，方便你直接验证目录和下单主链路。等你要切回真实微信联调时，只要把 `WECHAT_DEV_LOGIN_OPEN_ID` 清空、把两个 mock 开关改回 `false`，再补齐真实微信和商户参数即可。
+
 ## B 阶段内测运行手册
 
-启动前先把 `.env.example` 复制成 `.env` 并补齐内测环境变量。`TARO_APP_API_BASE_URL` 用来把小程序指向 API。`WECHAT_APP_ID` 和 `WECHAT_APP_SECRET` 用于小程序登录接口 `/api/auth/wechat/login`。真实微信支付还需要 `WECHAT_MCH_ID`、`WECHAT_MCH_CERT_SERIAL_NO`、`WECHAT_PRIVATE_KEY_PEM`、`WECHAT_API_V3_KEY`、`WECHAT_PLATFORM_CERT_SERIAL_NO`、`WECHAT_PLATFORM_PUBLIC_KEY_PEM` 和 `WECHAT_NOTIFY_URL`，其中 `WECHAT_NOTIFY_URL` 必须指向 `/api/payments/wechat/callback`。`.env.example` 里保留了 `WECHAT_CALLBACK_SECRET`，但当前实现的支付回调校验依赖微信平台证书和签名流程，而不是共享密钥 Header。
+启动前先把 `.env.example` 复制成 `.env` 并补齐内测环境变量。`TARO_APP_API_BASE_URL` 用来把小程序指向 API。`WECHAT_APP_ID` 和 `WECHAT_APP_SECRET` 用于小程序登录接口 `/api/auth/wechat/login`。真实微信支付还需要 `WECHAT_MCH_ID`、`WECHAT_MCH_CERT_SERIAL_NO`、`WECHAT_PRIVATE_KEY_PEM`、`WECHAT_API_V3_KEY`、`WECHAT_PLATFORM_CERT_SERIAL_NO`、`WECHAT_PLATFORM_PUBLIC_KEY_PEM` 和 `WECHAT_NOTIFY_URL`，其中 `WECHAT_NOTIFY_URL` 必须指向 `/api/payments/wechat/callback`。`.env.example` 里保留了 `WECHAT_CALLBACK_SECRET`，但当前实现的支付回调校验依赖微信平台证书和签名流程，而不是共享密钥 Header。开发环境如果只是先做流程联调，可以使用 `WECHAT_DEV_LOGIN_OPEN_ID`、`WECHAT_PAY_DEV_MOCK`、`TARO_APP_MOCK_WECHAT_PAY` 和 `VENDOR_DEV_MOCK` 这四个 mock 开关。
 
 覆盖 `预发联调 + 首场真实开卖值守` 的总手册见：
 [docs/superpowers/specs/2026-04-18-ticketing-beta-joint-runbook.md](docs/superpowers/specs/2026-04-18-ticketing-beta-joint-runbook.md)
@@ -32,14 +48,14 @@ Monorepo for an authorized ticketing platform with a Nest API, a Taro miniapp, a
 - [docs/superpowers/plans/2026-04-18-ticketing-beta-live-sale-duty-schedule.md](docs/superpowers/plans/2026-04-18-ticketing-beta-live-sale-duty-schedule.md)
 - [docs/superpowers/plans/2026-04-18-ticketing-beta-support-operations-playbook.md](docs/superpowers/plans/2026-04-18-ticketing-beta-support-operations-playbook.md)
 
-上游出票/退款提交依赖 `VENDOR_API_BASE_URL` 和 `VENDOR_API_KEY`。上游回调通过 `VENDOR_CALLBACK_SECRET` 保护，调用时需要向 `/api/fulfillment/vendor-callback-issued` 和 `/api/refunds/vendor-callback` 传 `x-vendor-callback-secret`。后台接口通过 `ADMIN_API_SECRET` 和 `x-admin-secret` 保护。后台应用现在默认请求同域 `/api`，如果要让后台连到其他环境，可以先在浏览器 localStorage 设置 `ticketing.admin.apiSecret` 和 `ticketing.admin.apiBaseUrl`，然后刷新页面。例如：
+上游出票/退款提交依赖 `VENDOR_API_BASE_URL` 和 `VENDOR_API_KEY`。如果本地只是为了把整条链路联调跑通，可以在非生产环境把 `VENDOR_DEV_MOCK=true` 打开，此时 API 会返回确定性的 mock `externalRef`，不再真的请求上游。上游回调通过 `VENDOR_CALLBACK_SECRET` 保护，调用时需要向 `/api/fulfillment/vendor-callback-issued` 和 `/api/refunds/vendor-callback` 传 `x-vendor-callback-secret`。后台接口通过 `ADMIN_API_SECRET` 和 `x-admin-secret` 保护。后台应用现在默认请求同域 `/api`，如果要让后台连到其他环境，可以先在浏览器 localStorage 设置 `ticketing.admin.apiSecret` 和 `ticketing.admin.apiBaseUrl`，然后刷新页面。例如：
 
 ```js
 localStorage.setItem('ticketing.admin.apiSecret', '<ADMIN_API_SECRET>');
 localStorage.setItem('ticketing.admin.apiBaseUrl', 'https://beta.example.com/api');
 ```
 
-启动流程：执行 `corepack pnpm install`，启动 PostgreSQL，执行 `corepack pnpm --filter api prisma:migrate`，然后再启动 API、后台和小程序。当前演出运营控制项在后台 `/events` 页面，不在 `BETA_*` 环境变量里。现在它们更接近运营/UI 控制，而不是后端硬熔断：`published` 会让演出从公开列表和详情接口消失，而 `saleStatus` 和 `refundEntryEnabled` 主要驱动后台和用户侧状态展示。草稿单创建和退款提交还不能只靠这两个字段被完全拦住，所以应把它们理解为“运营引导和流量暴露控制”，而不是绝对截止开关。设置完 localStorage 后，后台常用入口就是 `/events`、`/orders`、`/fulfillment`、`/refunds`。
+启动流程：执行 `corepack pnpm install`，启动 PostgreSQL，执行 `corepack pnpm --filter api prisma:migrate`，必要时执行 `corepack pnpm --filter api prisma:seed`，然后再启动 API、后台和小程序。当前演出运营控制项在后台 `/events` 页面，不在 `BETA_*` 环境变量里。现在它们更接近运营/UI 控制，而不是后端硬熔断：`published` 会让演出从公开列表和详情接口消失，而 `saleStatus` 和 `refundEntryEnabled` 主要驱动后台和用户侧状态展示。草稿单创建和退款提交还不能只靠这两个字段被完全拦住，所以应把它们理解为“运营引导和流量暴露控制”，而不是绝对截止开关。设置完 localStorage 后，后台常用入口就是 `/events`、`/orders`、`/fulfillment`、`/refunds`。
 
 联调彩排最小检查项：
 
@@ -90,3 +106,14 @@ localStorage.setItem('ticketing.admin.apiBaseUrl', 'https://beta.example.com/api
 - Shared and frontend packages use Vitest.
 - Root lint is a lightweight baseline pass over the workspace packages and repo-level checks, not a full style-enforcement sweep.
 - The risk module currently exposes a baseline purchase-limit check; checkout policy data can be wired in later when a source of truth exists.
+
+## Device Preview
+
+For real-device WeChat preview on the same LAN, keep the simulator flow on `127.0.0.1` and use the dedicated device commands below:
+
+1. Run `corepack pnpm dev:api:device` to start the API on `0.0.0.0:3100`.
+2. Run `corepack pnpm dev:miniapp:device` to build the miniapp with your LAN API base URL.
+3. Make sure the phone and this computer are on the same Wi-Fi/LAN.
+4. Allow Windows Firewall access for the API port if prompted.
+
+The device miniapp command auto-detects a private IPv4 address and injects `http://<your-lan-ip>:3100/api` into the development build. If auto-detection picks the wrong NIC, set `TARO_APP_DEVICE_HOST` before running the command.

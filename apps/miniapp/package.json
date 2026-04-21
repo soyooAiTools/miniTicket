@@ -5,6 +5,7 @@
     "@tarojs/components": "^4.2.0",
     "@tarojs/runtime": "^4.2.0",
     "@tarojs/react": "^4.2.0",
+    "@tarojs/shared": "^4.2.0",
     "@tarojs/taro": "^4.2.0",
     "@tarojs/webpack5-runner": "^4.2.0",
     "react": "^18.3.1"
@@ -20,7 +21,9 @@
   },
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",
+    "dev:weapp:device": "node ../../scripts/run-miniapp-device.mjs dev",
     "build:weapp": "taro build --type weapp",
+    "build:weapp:device": "node ../../scripts/run-miniapp-device.mjs build",
     "test": "vitest run",
     "lint": "eslint src --ext .ts,.tsx"
   }

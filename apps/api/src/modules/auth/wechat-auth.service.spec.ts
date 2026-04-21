@@ -131,6 +131,50 @@ describe('WechatAuthService', () => {
     expect(prismaMock.customerSession.create).not.toHaveBeenCalled();
   });
 
+  it('uses the configured development open id without calling WeChat in non-production environments', async () => {
+    process.env.NODE_ENV = 'development';
+    process.env.WECHAT_DEV_LOGIN_OPEN_ID = 'dev-openid-local';
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-04-17T09:30:00.000Z'));
+
+    prismaMock.customerAccount.upsert = jest.fn().mockResolvedValue({
+      id: 'cust_dev_001',
+      wechatOpenId: 'dev-openid-local',
+    });
+    prismaMock.customerSession.create = jest.fn().mockResolvedValue({
+      id: 'session_dev_001',
+    });
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        WechatAuthService,
+        { provide: PrismaService, useValue: prismaMock },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(WechatAuthService);
+    const result = await service.loginWithCode('unused-dev-code');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(prismaMock.customerAccount.upsert).toHaveBeenCalledWith({
+      where: {
+        wechatOpenId: 'dev-openid-local',
+      },
+      update: {},
+      create: {
+        wechatOpenId: 'dev-openid-local',
+      },
+      select: {
+        id: true,
+        wechatOpenId: true,
+      },
+    });
+    expect(result.customer.openId).toBe('dev-openid-local');
+
+    delete process.env.WECHAT_DEV_LOGIN_OPEN_ID;
+    delete process.env.NODE_ENV;
+  });
+
   it('rejects a WeChat JSON parse failure before creating persistence records', async () => {
     fetchMock.mockResolvedValue({
       json: jest.fn().mockRejectedValue(new Error('bad json')),

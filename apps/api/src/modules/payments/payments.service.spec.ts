@@ -161,6 +161,110 @@ describe('PaymentsService', () => {
     });
   });
 
+  it('creates a development mock payment intent and advances the order without calling WeChat', async () => {
+    process.env.NODE_ENV = 'development';
+    process.env.WECHAT_PAY_DEV_MOCK = 'true';
+
+    const fulfillmentEventsService = {
+      submitPaidOrder: jest.fn().mockResolvedValue({
+        externalRef: 'vendor_submit_1',
+        nextStatus: ORDER_STATUS.SUBMITTED_TO_VENDOR,
+        orderId: 'ord_1',
+      }),
+    };
+    const txMock = {
+      order: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      payment: {
+        upsert: jest.fn().mockResolvedValue({
+          id: 'payment_mock_001',
+        }),
+      },
+    };
+    const prismaMock = {
+      $transaction: jest.fn().mockImplementation(
+        async (callback: (tx: typeof txMock) => Promise<unknown>) => callback(txMock),
+      ),
+      order: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'ord_1',
+          items: [
+            {
+              ticketTier: {
+                session: {
+                  event: {
+                    title: 'Beta Concert',
+                  },
+                },
+              },
+            },
+          ],
+          orderNumber: 'ORD-001',
+          status: 'PENDING_PAYMENT',
+          totalAmount: 159800,
+        }),
+      },
+    } as never;
+    const gatewayMock = {
+      createJsapiIntent: jest.fn(),
+    } as never;
+    const service = new (PaymentsService as any)(
+      prismaMock,
+      gatewayMock,
+      fulfillmentEventsService as never,
+    );
+
+    const result = await Promise.resolve().then(() =>
+      (service as any).createWechatIntent({
+        customerId: 'cust_1',
+        orderId: 'ord_1',
+        openId: 'openid_123',
+      }),
+    );
+
+    expect(gatewayMock.createJsapiIntent).not.toHaveBeenCalled();
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.order.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'ord_1',
+        status: ORDER_STATUS.PENDING_PAYMENT,
+      },
+      data: {
+        status: ORDER_STATUS.PAID_PENDING_FULFILLMENT,
+      },
+    });
+    expect(txMock.payment.upsert).toHaveBeenCalledWith({
+      where: {
+        providerTxnId: 'mock-wechat-pay-ORD-001',
+      },
+      create: expect.objectContaining({
+        amount: 159800,
+        method: 'WECHAT_PAY',
+        orderId: 'ord_1',
+        providerTxnId: 'mock-wechat-pay-ORD-001',
+        status: 'SUCCEEDED',
+      }),
+      update: expect.objectContaining({
+        amount: 159800,
+        method: 'WECHAT_PAY',
+        status: 'SUCCEEDED',
+      }),
+    });
+    expect(fulfillmentEventsService.submitPaidOrder).toHaveBeenCalledWith('ord_1');
+    expect(result).toEqual({
+      appId: 'wx-dev-mock',
+      nonceStr: 'mock-nonce',
+      packageValue: 'prepay_id=mock-wechat-pay-ORD-001',
+      paySign: 'mock-signature',
+      signType: 'RSA',
+      timeStamp: expect.any(String),
+    });
+
+    delete process.env.WECHAT_PAY_DEV_MOCK;
+    delete process.env.NODE_ENV;
+  });
+
   it('routes a payment intent request through the payment service', async () => {
     const serviceMock = {
       createWechatIntent: jest.fn().mockResolvedValue({

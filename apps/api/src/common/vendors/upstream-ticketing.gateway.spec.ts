@@ -102,4 +102,28 @@ describe('UpstreamTicketingGateway', () => {
       new BadRequestException('vendor rejected request'),
     );
   });
+
+  it('returns deterministic mock refs in non-production when vendor mock mode is enabled', async () => {
+    process.env.NODE_ENV = 'development';
+    process.env.VENDOR_DEV_MOCK = 'true';
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as typeof global.fetch;
+
+    const gateway = new UpstreamTicketingGateway();
+
+    await expect(gateway.submitOrder({ orderId: 'ord_1' })).resolves.toEqual({
+      externalRef: 'mock-order-ord_1',
+    });
+    await expect(
+      gateway.submitRefund({
+        amount: 80000,
+        orderId: 'ord_1',
+        refundNo: 'RFD-001',
+      }),
+    ).resolves.toEqual({
+      externalRef: 'mock-refund-RFD-001',
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

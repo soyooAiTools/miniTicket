@@ -1,8 +1,17 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import Taro, { useLoad, useUnload } from '@tarojs/taro';
 import { useRef, useState } from 'react';
 
-import type { OrderDetail } from '../../../../../packages/contracts/src';
+import type { OrderDetail, OrderStatus } from '../../../../../packages/contracts/src';
+import {
+  PageHero,
+  PageShell,
+  PrimaryButton,
+  SectionHeading,
+  StatusChip,
+  StickyActionBar,
+  SurfaceCard,
+} from '../../components/ui';
 import { request } from '../../services/request';
 import { clearStoredDraftOrderId } from '../checkout/payment-session';
 import { waitForOrderProcessing } from './polling';
@@ -10,16 +19,13 @@ import {
   resolvePaymentResultRedirectUrl,
   schedulePaymentResultRedirect,
 } from './redirect';
-
-const cardStyle = {
-  background: '#ffffff',
-  borderRadius: '16px',
-  padding: '20px',
-};
+import { getPaymentResultMeta } from '../../ui/order-presenters';
+import { getOrderStatusMeta } from '../../ui/status';
 
 export default function PaymentResultPage() {
   const [orderId, setOrderId] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState('PENDING_PAYMENT');
+  const [paymentStatus, setPaymentStatus] =
+    useState<OrderStatus>('PENDING_PAYMENT');
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const isDisposedRef = useRef(false);
 
@@ -44,7 +50,7 @@ export default function PaymentResultPage() {
           return;
         }
 
-        setPaymentStatus(result.status);
+        setPaymentStatus(result.status as OrderStatus);
 
         if (!result.ready) {
           return;
@@ -66,7 +72,7 @@ export default function PaymentResultPage() {
 
         Taro.showToast({
           icon: 'none',
-          title: '支付结果确认中，请稍后查看订单',
+          title: '支付状态确认中，请稍后查看订单',
         });
       });
   });
@@ -79,36 +85,46 @@ export default function PaymentResultPage() {
     }
   });
 
+  const paymentMeta = getPaymentResultMeta(paymentStatus);
+
   return (
-    <View
-      className='page payment-result-page'
-      style={{ background: '#f5f5f5', minHeight: '100vh', padding: '16px' }}
-    >
-      <View style={cardStyle}>
-        <Text style={{ display: 'block', fontSize: '24px', fontWeight: 'bold' }}>
-          支付结果
-        </Text>
-        <Text
-          style={{
-            color: '#666',
-            display: 'block',
-            lineHeight: '24px',
-            marginTop: '12px',
-          }}
-        >
-          支付发起后会先进入订单处理链路，这里会先确认后台状态，再跳转到订单详情。
-        </Text>
+    <PageShell dense>
+      <PageHero
+        description='支付完成后，平台会先确认订单状态，再自动引导进入订单详情。'
+        eyebrow='Payment result'
+        title={paymentMeta.title}
+      />
 
-        <Text style={{ color: '#111827', display: 'block', marginTop: '20px' }}>
-          订单号：{orderId || '未获取到订单号'}
-        </Text>
-        <Text style={{ color: '#111827', display: 'block', marginTop: '12px' }}>
-          当前状态：{paymentStatus}
-        </Text>
-      </View>
+      <SurfaceCard>
+        <View className='stack-header'>
+          <View className='stack-header__content'>
+            <Text className='stack-header__title'>{paymentMeta.title}</Text>
+            <Text className='stack-header__meta'>{paymentMeta.description}</Text>
+          </View>
+          <StatusChip meta={getOrderStatusMeta(paymentStatus)} />
+        </View>
+      </SurfaceCard>
 
-      <View style={{ marginTop: '16px' }}>
-        <Button
+      <SurfaceCard muted>
+        <SectionHeading
+          description='当前订单号和状态会持续同步。'
+          eyebrow='Status'
+          title='结果同步中'
+        />
+        <View className='detail-list'>
+          <View className='detail-list__row'>
+            <Text className='detail-list__label'>订单号</Text>
+            <Text className='detail-list__value'>{orderId || '未获取到订单号'}</Text>
+          </View>
+          <View className='detail-list__row'>
+            <Text className='detail-list__label'>当前状态</Text>
+            <Text className='detail-list__value'>{paymentStatus}</Text>
+          </View>
+        </View>
+      </SurfaceCard>
+
+      <StickyActionBar>
+        <PrimaryButton
           onClick={() =>
             Taro.navigateTo({
               url: resolvePaymentResultRedirectUrl(orderId),
@@ -116,8 +132,8 @@ export default function PaymentResultPage() {
           }
         >
           查看订单详情
-        </Button>
-      </View>
-    </View>
+        </PrimaryButton>
+      </StickyActionBar>
+    </PageShell>
   );
 }

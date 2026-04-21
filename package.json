@@ -3,10 +3,15 @@
   "private": true,
   "packageManager": "pnpm@10.8.1",
   "scripts": {
+    "bootstrap:local": "corepack pnpm --filter api prisma:generate && corepack pnpm --filter api prisma:migrate && corepack pnpm --filter api prisma:seed",
     "dev:api": "corepack pnpm --filter api dev",
+    "dev:api:device": "node scripts/run-api-device.mjs",
     "dev:admin": "corepack pnpm --filter admin dev",
+    "dev:infra": "docker compose up -d",
+    "dev:infra:down": "docker compose down",
     "dev:miniapp": "corepack pnpm --filter miniapp dev:weapp",
-    "test": "corepack pnpm --filter api test && corepack pnpm --filter @ticketing/contracts test && corepack pnpm --filter admin test && corepack pnpm --filter miniapp test && corepack pnpm exec vitest run tests/workspace/repo-layout.spec.ts",
+    "dev:miniapp:device": "corepack pnpm --filter miniapp dev:weapp:device",
+    "test": "corepack pnpm --filter api test && corepack pnpm --filter @ticketing/contracts test && corepack pnpm --filter admin test && corepack pnpm --filter miniapp test && corepack pnpm exec vitest run tests/workspace/repo-layout.spec.ts tests/workspace/prisma-migrations.spec.ts",
     "lint": "corepack pnpm -r --if-present lint && corepack pnpm exec eslint tests --ext .ts"
   },
   "devDependencies": {

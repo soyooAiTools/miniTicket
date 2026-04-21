@@ -43,6 +43,65 @@ export class PaymentsService {
     private readonly fulfillmentEventsService?: FulfillmentEventsService,
   ) {}
 
+  private isDevelopmentMockPayEnabled() {
+    return (
+      process.env.WECHAT_PAY_DEV_MOCK?.trim() === 'true' &&
+      process.env.NODE_ENV !== 'production'
+    );
+  }
+
+  private async createDevelopmentMockIntent(input: {
+    amount: number;
+    orderId: string;
+    orderNumber: string;
+  }): Promise<WechatPaymentIntent> {
+    const paidAt = new Date();
+    const providerTxnId = `mock-wechat-pay-${input.orderNumber}`;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.payment.upsert({
+        where: {
+          providerTxnId,
+        },
+        create: {
+          amount: input.amount,
+          method: PaymentMethod.WECHAT_PAY,
+          orderId: input.orderId,
+          paidAt,
+          providerTxnId,
+          status: PaymentStatus.SUCCEEDED,
+        },
+        update: {
+          amount: input.amount,
+          method: PaymentMethod.WECHAT_PAY,
+          paidAt,
+          status: PaymentStatus.SUCCEEDED,
+        },
+      });
+
+      await tx.order.updateMany({
+        where: {
+          id: input.orderId,
+          status: ORDER_STATUS.PENDING_PAYMENT,
+        },
+        data: {
+          status: ORDER_STATUS.PAID_PENDING_FULFILLMENT,
+        },
+      });
+    });
+
+    await this.fulfillmentEventsService?.submitPaidOrder(input.orderId);
+
+    return {
+      appId: 'wx-dev-mock',
+      nonceStr: 'mock-nonce',
+      packageValue: `prepay_id=${providerTxnId}`,
+      paySign: 'mock-signature',
+      signType: 'RSA',
+      timeStamp: Math.floor(paidAt.getTime() / 1000).toString(),
+    };
+  }
+
   async createWechatIntent(
     input: CreateWechatIntentInput,
   ): Promise<WechatPaymentIntent> {
@@ -80,6 +139,14 @@ export class PaymentsService {
 
     if (!firstEventTitle) {
       throw new BadRequestException('Pending order is missing event details.');
+    }
+
+    if (this.isDevelopmentMockPayEnabled()) {
+      return this.createDevelopmentMockIntent({
+        amount: order.totalAmount,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+      });
     }
 
     if (!this.wechatPayGateway) {

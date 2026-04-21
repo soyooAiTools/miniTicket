@@ -1,51 +1,22 @@
-import { Button, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import Taro, { useDidShow, useRouter } from '@tarojs/taro';
 import { useState } from 'react';
 
 import type { OrderDetail } from '../../../../../packages/contracts/src';
+import {
+  EmptyState,
+  PageHero,
+  PageShell,
+  PrimaryButton,
+  SectionHeading,
+  StatusChip,
+  StickyActionBar,
+  SurfaceCard,
+} from '../../components/ui';
 import { request } from '../../services/request';
-
-const sectionStyle = {
-  background: '#ffffff',
-  borderRadius: '16px',
-  marginBottom: '16px',
-  padding: '16px',
-};
-
-const REFUND_REQUESTABLE_STATUSES = new Set([
-  'PAID_PENDING_FULFILLMENT',
-  'SUBMITTED_TO_VENDOR',
-  'TICKET_ISSUED',
-  'TICKET_FAILED',
-]);
-
-function getRefundMessage(orderDetail: OrderDetail) {
-  if (!orderDetail.refundEntryEnabled) {
-    return 'Refund entry is currently closed for this event.';
-  }
-
-  if (orderDetail.status === 'REFUND_REVIEWING') {
-    return 'Your refund request has been saved and is under review.';
-  }
-
-  if (orderDetail.status === 'REFUND_PROCESSING') {
-    return 'Your refund request has been submitted upstream and is processing.';
-  }
-
-  if (orderDetail.status === 'REFUNDED') {
-    return 'This order has already been refunded.';
-  }
-
-  if (orderDetail.status === 'TICKET_ISSUED') {
-    return 'Refund entry is live for this issued order.';
-  }
-
-  if (REFUND_REQUESTABLE_STATUSES.has(orderDetail.status)) {
-    return 'Refund entry is live for this order status.';
-  }
-
-  return 'Refunds are available once the order reaches an eligible state.';
-}
+import { formatCompactDateTime, formatCurrencyCny } from '../../ui/formatters';
+import { getRefundEntrySummary } from '../../ui/order-presenters';
+import { getOrderStatusMeta, getTicketTypeLabel } from '../../ui/status';
 
 export default function OrderDetailPage() {
   const router = useRouter();
@@ -65,127 +36,142 @@ export default function OrderDetailPage() {
       .catch(() => {
         Taro.showToast({
           icon: 'none',
-          title: 'Failed to load order',
+          title: '订单加载失败',
         });
       });
   });
 
   if (!orderDetail) {
     return (
-      <View
-        className='page order-detail-page'
-        style={{ background: '#f5f5f5', minHeight: '100vh', padding: '16px' }}
-      >
-        <View style={sectionStyle}>
-          <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-            Loading order
-          </Text>
-          <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-            Order id: {router.params?.id ?? 'unknown'}
-          </Text>
-        </View>
-      </View>
+      <PageShell dense>
+        <SurfaceCard>
+          <EmptyState
+            description='订单详情正在同步，请稍后再试。'
+            title='正在加载订单'
+          />
+        </SurfaceCard>
+      </PageShell>
     );
   }
 
-  const canRequestRefund =
-    REFUND_REQUESTABLE_STATUSES.has(orderDetail.status) &&
-    orderDetail.refundEntryEnabled;
+  const refundSummary = getRefundEntrySummary({
+    refundEntryEnabled: orderDetail.refundEntryEnabled,
+    status: orderDetail.status,
+  });
 
   return (
-    <View
-      className='page order-detail-page'
-      style={{ background: '#f5f5f5', minHeight: '100vh', padding: '16px' }}
-    >
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '24px', fontWeight: 'bold' }}>
-          Order detail
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          Order no: {orderDetail.orderNumber}
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          Status: {orderDetail.status} / {orderDetail.ticketType}
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          Created at: {orderDetail.createdAt}
-        </Text>
-      </View>
+    <PageShell dense>
+      <PageHero
+        description='把订单状态、履约进度和售后入口整合到一个页面里。'
+        eyebrow='Order detail'
+        title='订单详情'
+      >
+        <View className='pill-row'>
+          <View className='pill-row__item'>{orderDetail.orderNumber}</View>
+          <View className='pill-row__item'>
+            {formatCurrencyCny(orderDetail.totalAmount)}
+          </View>
+        </View>
+      </PageHero>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          Event
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          {orderDetail.event.title}
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          {orderDetail.event.city} / {orderDetail.event.venueName}
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          Sale status: {orderDetail.event.saleStatus}
-        </Text>
-      </View>
+      <SurfaceCard>
+        <View className='stack-header'>
+          <View className='stack-header__content'>
+            <Text className='stack-header__title'>{orderDetail.event.title}</Text>
+            <Text className='stack-header__meta'>
+              {orderDetail.event.city} · {orderDetail.event.venueName}
+            </Text>
+          </View>
+          <StatusChip meta={getOrderStatusMeta(orderDetail.status)} />
+        </View>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          Timeline
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          {orderDetail.timeline.title}
-        </Text>
-        <Text style={{ color: '#666', display: 'block', marginTop: '8px' }}>
-          {orderDetail.timeline.description}
-        </Text>
-      </View>
+        <View className='detail-list'>
+          <View className='detail-list__row'>
+            <Text className='detail-list__label'>票种</Text>
+            <Text className='detail-list__value'>
+              {getTicketTypeLabel(orderDetail.ticketType)}
+            </Text>
+          </View>
+          <View className='detail-list__row'>
+            <Text className='detail-list__label'>创建时间</Text>
+            <Text className='detail-list__value'>
+              {formatCompactDateTime(orderDetail.createdAt)}
+            </Text>
+          </View>
+          <View className='detail-list__row'>
+            <Text className='detail-list__label'>订单金额</Text>
+            <Text className='detail-list__value'>
+              {formatCurrencyCny(orderDetail.totalAmount)}
+            </Text>
+          </View>
+        </View>
+      </SurfaceCard>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          Items
-        </Text>
+      <SurfaceCard>
+        <SectionHeading
+          description='订单的每个观演人和票档明细都在这里。'
+          eyebrow='Items'
+          title='票档明细'
+        />
         {orderDetail.items.map((item) => (
-          <View
-            key={item.id}
-            style={{
-              background: '#f9fafb',
-              borderRadius: '12px',
-              marginTop: '12px',
-              padding: '12px',
-            }}
-          >
-            <Text style={{ display: 'block', fontWeight: 'bold' }}>
-              {item.sessionName} / {item.tierName}
+          <View key={item.id} className='detail-ticket'>
+            <Text className='detail-ticket__title'>
+              {item.sessionName} · {item.tierName}
             </Text>
-            <Text style={{ color: '#666', display: 'block', marginTop: '6px' }}>
-              Qty {item.quantity} / Unit {item.unitPrice} / Total {item.totalAmount}
+            <Text className='detail-ticket__meta'>
+              {item.quantity} 张 · 单价 {formatCurrencyCny(item.unitPrice)} · 小计{' '}
+              {formatCurrencyCny(item.totalAmount)}
             </Text>
-            <Text style={{ color: '#666', display: 'block', marginTop: '6px' }}>
-              Viewer: {item.viewer.name} / {item.viewer.mobile}
+            <Text className='detail-ticket__meta'>
+              观演人 {item.viewer.name} · {item.viewer.mobile}
             </Text>
           </View>
         ))}
-      </View>
+      </SurfaceCard>
 
-      <View style={sectionStyle}>
-        <Text style={{ display: 'block', fontSize: '18px', fontWeight: 'bold' }}>
-          After-sales
-        </Text>
-        <Text style={{ color: '#444', display: 'block', marginTop: '8px' }}>
-          {getRefundMessage(orderDetail)}
-        </Text>
-        {canRequestRefund ? (
-          <Button
-            style={{ marginTop: '12px' }}
-            onClick={() =>
-              Taro.navigateTo({
+      <SurfaceCard>
+        <SectionHeading
+          description='直接看当前平台认为最重要的一条进度提示。'
+          eyebrow='Timeline'
+          title='履约进度'
+        />
+        <View className='note-strip'>
+          <Text className='note-strip__title'>{orderDetail.timeline.title}</Text>
+          <Text className='note-strip__description'>
+            {orderDetail.timeline.description}
+          </Text>
+        </View>
+      </SurfaceCard>
+
+      <SurfaceCard muted>
+        <SectionHeading
+          description='售后入口是否开放，以当前订单状态和活动规则为准。'
+          eyebrow='After-sales'
+          title='售后说明'
+        />
+        <Text className='calendar-item__title'>{refundSummary.title}</Text>
+        <Text className='calendar-item__meta'>{refundSummary.description}</Text>
+      </SurfaceCard>
+
+      <StickyActionBar>
+        <PrimaryButton
+          variant={refundSummary.eligible ? 'primary' : 'secondary'}
+          onClick={() => {
+            if (refundSummary.eligible) {
+              void Taro.navigateTo({
                 url: `/pages/after-sales/index?orderId=${orderDetail.id}`,
-              })
+              });
+              return;
             }
-          >
-            Request refund
-          </Button>
-        ) : null}
-      </View>
-    </View>
+
+            void Taro.navigateTo({
+              url: '/pages/orders/index',
+            });
+          }}
+        >
+          {refundSummary.ctaLabel}
+        </PrimaryButton>
+      </StickyActionBar>
+    </PageShell>
   );
 }

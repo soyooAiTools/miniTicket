@@ -7,6 +7,13 @@ type UpstreamResponse = {
 
 @Injectable()
 export class UpstreamTicketingGateway {
+  private isDevelopmentMockEnabled() {
+    return (
+      process.env.VENDOR_DEV_MOCK?.trim() === 'true' &&
+      process.env.NODE_ENV !== 'production'
+    );
+  }
+
   private buildHeaders() {
     const apiKey = process.env.VENDOR_API_KEY?.trim();
 
@@ -64,10 +71,22 @@ export class UpstreamTicketingGateway {
   }
 
   submitOrder(input: { orderId: string }) {
+    if (this.isDevelopmentMockEnabled()) {
+      return Promise.resolve({
+        externalRef: `mock-order-${input.orderId}`,
+      });
+    }
+
     return this.post('/orders', input);
   }
 
   submitRefund(input: { amount: number; orderId: string; refundNo: string }) {
+    if (this.isDevelopmentMockEnabled()) {
+      return Promise.resolve({
+        externalRef: `mock-refund-${input.refundNo}`,
+      });
+    }
+
     return this.post('/refunds', input);
   }
 }

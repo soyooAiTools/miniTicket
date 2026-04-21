@@ -1,7 +1,15 @@
-import { Button, Text, View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
-import { useState } from 'react';
+import { Text, View } from '@tarojs/components';
+import Taro, { useDidShow, useLoad } from '@tarojs/taro';
+import { useMemo, useState } from 'react';
 
+import {
+  EmptyState,
+  PageHero,
+  PageShell,
+  PrimaryButton,
+  StickyActionBar,
+  SurfaceCard,
+} from '../../components/ui';
 import { request } from '../../services/request';
 import { ensureSession } from '../../services/session';
 
@@ -15,8 +23,30 @@ type ViewersResponse = {
   items: ViewerItem[];
 };
 
+type SelectionContext = {
+  ticketType: 'E_TICKET' | 'PAPER_TICKET';
+  tierId: string;
+};
+
 export default function ViewersPage() {
   const [items, setItems] = useState<ViewerItem[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectionContext, setSelectionContext] = useState<SelectionContext | null>(
+    null,
+  );
+
+  useLoad((params) => {
+    const tierId = (params?.tierId ?? '').trim();
+
+    if (!tierId) {
+      return;
+    }
+
+    setSelectionContext({
+      ticketType: params?.ticketType === 'PAPER_TICKET' ? 'PAPER_TICKET' : 'E_TICKET',
+      tierId,
+    });
+  });
 
   const loadViewers = async () => {
     try {
@@ -29,7 +59,7 @@ export default function ViewersPage() {
     } catch {
       Taro.showToast({
         icon: 'none',
-        title: '\u52a0\u8f7d\u89c2\u6f14\u4eba\u5931\u8d25',
+        title: '加载观演人失败',
       });
     }
   };
@@ -38,35 +68,117 @@ export default function ViewersPage() {
     void loadViewers();
   });
 
+  const selectedCount = selectedIds.length;
+  const isSelectionMode = selectionContext !== null;
+
+  const selectedSummary = useMemo(
+    () => items.filter((item) => selectedIds.includes(item.id)).map((item) => item.name),
+    [items, selectedIds],
+  );
+
+  const toggleViewer = (viewerId: string) => {
+    setSelectedIds((current) =>
+      current.includes(viewerId)
+        ? current.filter((item) => item !== viewerId)
+        : [...current, viewerId],
+    );
+  };
+
+  const proceedToCheckout = () => {
+    if (!selectionContext || selectedIds.length === 0) {
+      Taro.showToast({
+        icon: 'none',
+        title: '请至少选择一位观演人',
+      });
+      return;
+    }
+
+    void Taro.navigateTo({
+      url: `/pages/checkout/index?tierId=${selectionContext.tierId}&ticketType=${selectionContext.ticketType}&viewerIds=${selectedIds.join(',')}`,
+    });
+  };
+
   return (
-    <View className='page viewers-page'>
-      <View className='page__header'>
-        <Text className='page__title'>{'\u89c2\u6f14\u4eba\u7ba1\u7406'}</Text>
-        <Text className='page__description'>
-          {
-            '\u6dfb\u52a0\u5e38\u7528\u5b9e\u540d\u89c2\u6f14\u4eba\uff0c\u7ed3\u7b97\u65f6\u53ef\u76f4\u63a5\u9009\u62e9\u3002'
-          }
-        </Text>
-      </View>
+    <PageShell dense>
+      <PageHero
+        description={
+          isSelectionMode
+            ? '选择参与当前票档购票的实名观演人，然后继续进入支付确认。'
+            : '管理常用实名观演人，结算时可以直接选择。'
+        }
+        eyebrow='Viewers'
+        title='观演人管理'
+      />
 
-      <View className='viewer-list'>
-        {items.length === 0 ? (
-          <Text className='viewer-list__empty'>
-            {'\u6682\u672a\u6dfb\u52a0\u89c2\u6f14\u4eba\uff0c\u8bf7\u5148\u65b0\u589e\u3002'}
-          </Text>
-        ) : (
-          items.map((item) => (
-            <View key={item.id} className='viewer-list__item'>
-              <Text>{item.name}</Text>
-              <Text>{item.mobile}</Text>
-            </View>
-          ))
-        )}
-      </View>
+      {items.length === 0 ? (
+        <SurfaceCard>
+          <EmptyState
+            action={
+              <View style={{ marginTop: '12px', width: '100%' }}>
+                <PrimaryButton
+                  onClick={() => Taro.navigateTo({ url: '/pages/viewers/form' })}
+                >
+                  新增观演人
+                </PrimaryButton>
+              </View>
+            }
+            description='先补齐实名观演人信息，后续购票就可以直接选择。'
+            title='还没有可用观演人'
+          />
+        </SurfaceCard>
+      ) : (
+        items.map((item) => {
+          const active = selectedIds.includes(item.id);
 
-      <Button onClick={() => Taro.navigateTo({ url: '/pages/viewers/form' })}>
-        {'\u65b0\u589e\u89c2\u6f14\u4eba'}
-      </Button>
-    </View>
+          return (
+            <SurfaceCard key={item.id} muted={active}>
+              <View onClick={() => (isSelectionMode ? toggleViewer(item.id) : undefined)}>
+                <Text className='section-heading__title'>{item.name}</Text>
+                <Text className='section-heading__description'>{item.mobile}</Text>
+                <Text className='calendar-item__meta'>
+                  {isSelectionMode
+                    ? active
+                      ? '已加入本次购票'
+                      : '点击加入当前票档'
+                    : '实名信息已保存，可在购票时直接复用。'}
+                </Text>
+              </View>
+            </SurfaceCard>
+          );
+        })
+      )}
+
+      <SurfaceCard>
+        <PrimaryButton
+          variant='secondary'
+          onClick={() => Taro.navigateTo({ url: '/pages/viewers/form' })}
+        >
+          新增观演人
+        </PrimaryButton>
+      </SurfaceCard>
+
+      {isSelectionMode ? (
+        <StickyActionBar>
+          <PrimaryButton disabled={selectedCount === 0} onClick={proceedToCheckout}>
+            {selectedCount === 0
+              ? '选择观演人后继续'
+              : `继续支付 · 已选 ${selectedCount} 人`}
+          </PrimaryButton>
+          {selectedSummary.length > 0 ? (
+            <Text
+              style={{
+                color: '#64748b',
+                display: 'block',
+                fontSize: '22px',
+                marginTop: '10px',
+                textAlign: 'center',
+              }}
+            >
+              {selectedSummary.join('、')}
+            </Text>
+          ) : null}
+        </StickyActionBar>
+      ) : null}
+    </PageShell>
   );
 }
