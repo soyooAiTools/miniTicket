@@ -3,6 +3,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 
 import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
+import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { FulfillmentModule } from './modules/fulfillment/fulfillment.module';
@@ -25,6 +27,8 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     PrismaModule,
     HealthModule,
     AuthModule,
+    AdminAuthModule,
+    AdminUsersModule,
     ViewersModule,
     CatalogModule,
     CheckoutModule,
