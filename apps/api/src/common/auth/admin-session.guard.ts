@@ -42,13 +42,11 @@ export class AdminSessionGuard implements CanActivate {
       select: {
         user: {
           select: {
-            createdAt: true,
             email: true,
             enabled: true,
             id: true,
             name: true,
             role: true,
-            updatedAt: true,
           },
         },
       },
@@ -65,7 +63,9 @@ export class AdminSessionGuard implements CanActivate {
     }
 
     request.admin = {
-      ...session.user,
+      email: session.user.email,
+      id: session.user.id,
+      name: session.user.name,
       role: session.user.role as CurrentAdminPrincipal['role'],
     };
 

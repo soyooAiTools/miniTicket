@@ -1,6 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { createHash, scryptSync } from 'node:crypto';
 
+import { AdminSessionGuard } from '../../common/auth/admin-session.guard';
 import { AdminAuthService } from './admin-auth.service';
 
 function hashPassword(password: string, seed: string) {
@@ -23,6 +24,7 @@ describe('AdminAuthService', () => {
     adminSession: {
       create: jest.fn(),
       deleteMany: jest.fn(),
+      findFirst: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),
@@ -40,16 +42,14 @@ describe('AdminAuthService', () => {
     jest.restoreAllMocks();
   });
 
-  it('creates an admin session for valid credentials', async () => {
+  it('returns a compact user payload after login', async () => {
     (prismaMock.user.findUnique as jest.Mock).mockResolvedValue({
-      createdAt: new Date('2026-04-20T08:00:00.000Z'),
       email: 'ops@miniticket.local',
       enabled: true,
       id: 'seed-admin-ops',
-      name: '现场运营',
+      name: 'Ops Lead',
       passwordHash: hashPassword('Ops12345!', 'seed-admin-ops'),
       role: 'OPERATIONS',
-      updatedAt: new Date('2026-04-20T08:00:00.000Z'),
     });
     (prismaMock.adminSession.create as jest.Mock).mockResolvedValue({
       id: 'admin_session_001',
@@ -61,19 +61,15 @@ describe('AdminAuthService', () => {
       password: 'Ops12345!',
     });
 
-    expect(result.sessionToken).toHaveLength(64);
-    expect(result.user).toMatchObject({
+    expect(result.user).toEqual({
       email: 'ops@miniticket.local',
-      enabled: true,
       id: 'seed-admin-ops',
-      name: '现场运营',
+      name: 'Ops Lead',
       role: 'OPERATIONS',
     });
-    expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
-      where: {
-        email: 'ops@miniticket.local',
-      },
-    });
+    expect(result.user).not.toHaveProperty('enabled');
+    expect(result.user).not.toHaveProperty('createdAt');
+    expect(result.user).not.toHaveProperty('updatedAt');
     expect(prismaMock.adminSession.create).toHaveBeenCalledWith({
       data: {
         expiresAt: new Date('2026-04-21T20:00:00.000Z'),
@@ -83,12 +79,68 @@ describe('AdminAuthService', () => {
     });
   });
 
+  it('returns a compact admin principal from the session guard', async () => {
+    (prismaMock.adminSession.findFirst as jest.Mock).mockResolvedValue({
+      user: {
+        createdAt: new Date('2026-04-20T08:00:00.000Z'),
+        email: 'ops@miniticket.local',
+        enabled: true,
+        id: 'seed-admin-ops',
+        name: 'Ops Lead',
+        role: 'OPERATIONS',
+        updatedAt: new Date('2026-04-20T08:00:00.000Z'),
+      },
+    });
+
+    const guard = new AdminSessionGuard(prismaMock);
+    const request: any = {
+      headers: {
+        cookie: 'mini_ticket_admin_session=session-token-123',
+      },
+    };
+    const context = {
+      switchToHttp: () => ({
+        getRequest: () => request,
+      }),
+    } as never;
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.admin).toEqual({
+      email: 'ops@miniticket.local',
+      id: 'seed-admin-ops',
+      name: 'Ops Lead',
+      role: 'OPERATIONS',
+    });
+    expect(request.admin).not.toHaveProperty('enabled');
+    expect(request.admin).not.toHaveProperty('createdAt');
+    expect(request.admin).not.toHaveProperty('updatedAt');
+    expect(prismaMock.adminSession.findFirst).toHaveBeenCalledWith({
+      select: {
+        user: {
+          select: {
+            email: true,
+            enabled: true,
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
+      where: {
+        expiresAt: {
+          gt: expect.any(Date),
+        },
+        tokenHash: hashToken('session-token-123'),
+      },
+    });
+  });
+
   it('rejects disabled users', async () => {
     (prismaMock.user.findUnique as jest.Mock).mockResolvedValue({
       email: 'disabled@miniticket.local',
       enabled: false,
       id: 'seed-admin-disabled',
-      name: '已停用账号',
+      name: 'Disabled User',
       passwordHash: hashPassword('Admin123!', 'seed-admin-disabled'),
       role: 'ADMIN',
     });
@@ -110,7 +162,7 @@ describe('AdminAuthService', () => {
       email: 'ops@miniticket.local',
       enabled: true,
       id: 'seed-admin-ops',
-      name: '现场运营',
+      name: 'Ops Lead',
       passwordHash: hashPassword('Ops12345!', 'seed-admin-ops'),
       role: 'OPERATIONS',
     });

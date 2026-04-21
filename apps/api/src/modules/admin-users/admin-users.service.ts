@@ -1,5 +1,4 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type UserRole } from '@prisma/client';
 import { randomBytes, scryptSync } from 'node:crypto';
 
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -27,14 +26,6 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-function toAdminRole(role: UserRole): AdminUserRole {
-  if (role !== 'ADMIN' && role !== 'OPERATIONS') {
-    throw new NotFoundException('后台账号不存在。');
-  }
-
-  return role;
-}
-
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString('hex');
   const hash = scryptSync(password, salt, 64).toString('hex');
@@ -48,6 +39,11 @@ export class AdminUsersService {
 
   async listUsers(): Promise<AdminUserListItem[]> {
     const users = await this.prisma.user.findMany({
+      where: {
+        role: {
+          in: ['ADMIN', 'OPERATIONS'],
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -62,10 +58,7 @@ export class AdminUsersService {
       },
     });
 
-    return users.map((user) => ({
-      ...user,
-      role: toAdminRole(user.role),
-    }));
+    return users as AdminUserListItem[];
   }
 
   async createUser(input: CreateAdminUserInput): Promise<AdminUserListItem> {
@@ -99,38 +92,48 @@ export class AdminUsersService {
       },
     });
 
-    return {
-      ...user,
-      role: toAdminRole(user.role),
-    };
+    return user as AdminUserListItem;
   }
 
   async setEnabled(userId: string, enabled: boolean): Promise<AdminUserListItem> {
-    try {
-      const user = await this.prisma.user.update({
-        data: {
-          enabled,
+    const result = await this.prisma.user.updateMany({
+      data: {
+        enabled,
+      },
+      where: {
+        id: userId,
+        role: {
+          in: ['ADMIN', 'OPERATIONS'],
         },
-        select: {
-          createdAt: true,
-          email: true,
-          enabled: true,
-          id: true,
-          name: true,
-          role: true,
-          updatedAt: true,
-        },
-        where: {
-          id: userId,
-        },
-      });
+      },
+    });
 
-      return {
-        ...user,
-        role: toAdminRole(user.role),
-      };
-    } catch {
+    if (result.count === 0) {
       throw new NotFoundException('后台账号不存在。');
     }
+
+    const user = await this.prisma.user.findFirst({
+      select: {
+        createdAt: true,
+        email: true,
+        enabled: true,
+        id: true,
+        name: true,
+        role: true,
+        updatedAt: true,
+      },
+      where: {
+        id: userId,
+        role: {
+          in: ['ADMIN', 'OPERATIONS'],
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('后台账号不存在。');
+    }
+
+    return user as AdminUserListItem;
   }
 }

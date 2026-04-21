@@ -1,13 +1,10 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export type CurrentAdminPrincipal = {
-  createdAt: Date;
   email: string;
-  enabled: boolean;
   id: string;
   name: string;
   role: 'ADMIN' | 'OPERATIONS';
-  updatedAt: Date;
 };
 
 export const CurrentAdmin = createParamDecorator(

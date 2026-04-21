@@ -68,13 +68,10 @@ export class AdminAuthService {
     return {
       sessionToken,
       user: {
-        createdAt: user.createdAt,
         email: user.email,
-        enabled: user.enabled,
         id: user.id,
         name: user.name,
         role: user.role,
-        updatedAt: user.updatedAt,
       },
     };
   }
