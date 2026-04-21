@@ -18,7 +18,7 @@ export const adminOrderFlagSchema = z
   .object({
     id: z.string().min(1),
     type: z.string().min(1),
-    note: z.string().min(1),
+    note: z.string().min(1).optional(),
     createdAt: z.string().datetime(),
     createdByName: z.string().min(1),
   })

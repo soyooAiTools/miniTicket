@@ -4,6 +4,12 @@ import {
   adminDashboardSummarySchema,
   adminEventDraftSchema,
   adminOrderDetailSchema,
+  adminRefundApproveRequestSchema,
+  adminRefundDetailSchema,
+  adminRefundProcessRequestSchema,
+  adminRefundQueueItemSchema,
+  adminRefundRejectRequestSchema,
+  adminRefundStatusSchema,
   adminSessionSchema,
   adminUserListItemSchema,
   eventCatalogSummarySchema,
@@ -141,6 +147,18 @@ describe('shared contracts', () => {
     });
   });
 
+  it('rejects a ticket tier summary payload without regional rule fields', () => {
+    expect(() =>
+      ticketTierSummarySchema.parse({
+        id: 'tier_001',
+        name: 'Inner Field',
+        price: 499,
+        inventory: 200,
+        ticketType: 'E_TICKET',
+      }),
+    ).toThrow();
+  });
+
   it('validates an admin session payload', () => {
     expect(
       adminSessionSchema.parse({
@@ -163,7 +181,7 @@ describe('shared contracts', () => {
       adminDashboardSummarySchema.parse({
         activeEventCount: 3,
         upcomingEventCount: 2,
-        refundCount: 5,
+        pendingRefundCount: 5,
         flaggedOrderCount: 6,
         recentActions: [
           {
@@ -176,7 +194,7 @@ describe('shared contracts', () => {
         ],
       }),
     ).toMatchObject({
-      flaggedOrderCount: 6,
+      pendingRefundCount: 5,
       recentActions: [
         {
           action: 'EVENT_PUBLISHED',
@@ -320,6 +338,94 @@ describe('shared contracts', () => {
     });
   });
 
+  it('rejects an admin user payload with a non-admin role', () => {
+    expect(() =>
+      adminUserListItemSchema.parse({
+        id: 'admin_001',
+        name: '超级管理员',
+        email: 'admin@miniticket.local',
+        role: 'EVENT_ADMIN',
+        enabled: true,
+        createdAt: '2026-04-01T12:00:00.000Z',
+        updatedAt: '2026-04-20T12:00:00.000Z',
+      }),
+    ).toThrow();
+  });
+
+  it('validates admin refund statuses and queue payloads', () => {
+    expect(adminRefundStatusSchema.parse('REVIEWING')).toBe('REVIEWING');
+    expect(
+      adminRefundQueueItemSchema.parse({
+        id: 'refund_001',
+        orderId: 'ord_001',
+        orderNumber: 'AT202604210001',
+        status: 'REVIEWING',
+        amount: 80000,
+        currency: 'CNY',
+        reason: 'USER_IDENTITY_ERROR',
+        requesterName: '张三',
+        createdAt: '2026-04-21T08:00:00.000Z',
+      }),
+    ).toMatchObject({
+      status: 'REVIEWING',
+      amount: 80000,
+    });
+  });
+
+  it('rejects unsupported admin refund statuses', () => {
+    expect(() => adminRefundStatusSchema.parse('PENDING_REVIEW')).toThrow();
+    expect(() => adminRefundStatusSchema.parse('FAILED')).toThrow();
+  });
+
+  it('validates admin refund detail and request payloads', () => {
+    expect(
+      adminRefundDetailSchema.parse({
+        id: 'refund_001',
+        orderId: 'ord_001',
+        orderNumber: 'AT202604210001',
+        status: 'APPROVED',
+        amount: 80000,
+        currency: 'CNY',
+        reason: 'USER_IDENTITY_ERROR',
+        requesterName: '张三',
+        createdAt: '2026-04-21T08:00:00.000Z',
+        processedAt: '2026-04-21T09:00:00.000Z',
+        processedBy: '现场运营',
+        decisionNote: '已核验实名信息。',
+      }),
+    ).toMatchObject({
+      status: 'APPROVED',
+      processedBy: '现场运营',
+    });
+
+    expect(
+      adminRefundApproveRequestSchema.parse({
+        refundId: 'refund_001',
+        note: '已核验实名信息。',
+      }),
+    ).toMatchObject({
+      refundId: 'refund_001',
+    });
+
+    expect(
+      adminRefundRejectRequestSchema.parse({
+        refundId: 'refund_001',
+        reason: '不符合退款条件',
+      }),
+    ).toMatchObject({
+      reason: '不符合退款条件',
+    });
+
+    expect(
+      adminRefundProcessRequestSchema.parse({
+        refundId: 'refund_001',
+        note: '准备提交渠道处理',
+      }),
+    ).toMatchObject({
+      refundId: 'refund_001',
+    });
+  });
+
   it('validates admin event updates with sale status and operation switches', () => {
     expect(
       eventOperationsUpdateSchema.parse({
@@ -341,7 +447,7 @@ describe('shared contracts', () => {
     expect(
       viewerSchema.parse({
         id: 'viewer_001',
-        name: 'Zhang San',
+        name: '张三',
         mobile: '13800138000',
         idCard: '110101199003071234',
       }),
@@ -355,7 +461,7 @@ describe('shared contracts', () => {
     expect(() =>
       viewerSchema.parse({
         id: 'viewer_001',
-        name: 'Zhang San',
+        name: '张三',
         mobile: '23800138000',
         idCard: '110101199003071234',
       }),
@@ -397,7 +503,7 @@ describe('shared contracts', () => {
             totalAmount: 998,
             viewer: {
               id: 'viewer_001',
-              name: 'Zhang San',
+              name: '张三',
               mobile: '13800138000',
             },
           },
@@ -421,7 +527,7 @@ describe('shared contracts', () => {
         currency: 'CNY',
         viewer: {
           id: 'viewer_001',
-          name: 'Zhang San',
+          name: '张三',
           mobile: '13800138000',
           idCard: '110101199003071234',
         },

@@ -14,7 +14,7 @@ export const adminDashboardSummarySchema = z
   .object({
     activeEventCount: z.number().int().nonnegative(),
     upcomingEventCount: z.number().int().nonnegative(),
-    refundCount: z.number().int().nonnegative(),
+    pendingRefundCount: z.number().int().nonnegative(),
     flaggedOrderCount: z.number().int().nonnegative(),
     recentActions: z.array(adminDashboardRecentActionSchema),
   })

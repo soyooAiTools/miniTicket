@@ -1,12 +1,11 @@
 import { z } from 'zod';
 
 export const adminRefundStatusSchema = z.enum([
-  'PENDING_REVIEW',
+  'REVIEWING',
   'APPROVED',
   'REJECTED',
   'PROCESSING',
   'COMPLETED',
-  'FAILED',
 ]);
 
 export const adminRefundQueueItemSchema = z
