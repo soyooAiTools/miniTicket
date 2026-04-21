@@ -33,6 +33,7 @@ describe('AdminAuthService', () => {
     user: {
       findUnique: jest.fn(),
     },
+    $transaction: jest.fn(),
   } as never;
 
   beforeEach(() => {
@@ -55,12 +56,22 @@ describe('AdminAuthService', () => {
       passwordHash: hashPassword('Ops12345!', 'seed-admin-ops'),
       role: 'OPERATIONS',
     });
-    (prismaMock.adminSession.create as jest.Mock).mockResolvedValue({
-      id: 'admin_session_001',
-    });
-    (prismaMock.adminAuditLog.create as jest.Mock).mockResolvedValue({
-      id: 'audit_001',
-    });
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn().mockResolvedValue({
+          id: 'audit_001',
+        }),
+      },
+      adminSession: {
+        create: jest.fn().mockResolvedValue({
+          id: 'admin_session_001',
+        }),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
 
     const service = new AdminAuthService(prismaMock);
     const result = await service.login({
@@ -77,14 +88,15 @@ describe('AdminAuthService', () => {
     expect(result.user).not.toHaveProperty('enabled');
     expect(result.user).not.toHaveProperty('createdAt');
     expect(result.user).not.toHaveProperty('updatedAt');
-    expect(prismaMock.adminSession.create).toHaveBeenCalledWith({
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.adminSession.create).toHaveBeenCalledWith({
       data: {
         expiresAt: new Date('2026-04-21T20:00:00.000Z'),
         tokenHash: hashToken(result.sessionToken),
         userId: 'seed-admin-ops',
       },
     });
-    expect(prismaMock.adminAuditLog.create).toHaveBeenCalledWith({
+    expect(txMock.adminAuditLog.create).toHaveBeenCalledWith({
       data: {
         action: 'ADMIN_LOGIN',
         payload: {
@@ -95,6 +107,44 @@ describe('AdminAuthService', () => {
         userId: 'seed-admin-ops',
       },
     });
+  });
+
+  it('rejects login when audit logging fails inside the transaction', async () => {
+    (prismaMock.user.findUnique as jest.Mock).mockResolvedValue({
+      email: 'ops@miniticket.local',
+      enabled: true,
+      id: 'seed-admin-ops',
+      name: 'Ops Lead',
+      passwordHash: hashPassword('Ops12345!', 'seed-admin-ops'),
+      role: 'OPERATIONS',
+    });
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn().mockRejectedValue(new Error('audit failed')),
+      },
+      adminSession: {
+        create: jest.fn().mockResolvedValue({
+          id: 'admin_session_001',
+        }),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
+
+    const service = new AdminAuthService(prismaMock);
+
+    await expect(
+      service.login({
+        email: 'ops@miniticket.local',
+        password: 'Ops12345!',
+      }),
+    ).rejects.toThrow('audit failed');
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.adminSession.create).toHaveBeenCalledTimes(1);
+    expect(txMock.adminAuditLog.create).toHaveBeenCalledTimes(1);
   });
 
   it('returns a compact admin principal from the session guard', async () => {

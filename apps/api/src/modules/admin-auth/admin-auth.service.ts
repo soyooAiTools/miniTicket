@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { type UserRole } from '@prisma/client';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
-import { AdminAuditService } from '../../common/admin/admin-audit.service';
 import {
   ADMIN_SESSION_TTL_MS,
   createSessionToken,
@@ -57,22 +56,27 @@ export class AdminAuthService {
     }
 
     const sessionToken = createSessionToken();
-    const session = await this.prisma.adminSession.create({
-      data: {
-        expiresAt: new Date(Date.now() + ADMIN_SESSION_TTL_MS),
-        tokenHash: hashSessionToken(sessionToken),
-        userId: user.id,
-      },
-    });
 
-    await new AdminAuditService(this.prisma).recordAction({
-      action: 'ADMIN_LOGIN',
-      actorUserId: user.id,
-      payload: {
-        sessionId: session.id,
-      },
-      targetId: session.id,
-      targetType: 'ADMIN_SESSION',
+    await this.prisma.$transaction(async (tx) => {
+      const session = await tx.adminSession.create({
+        data: {
+          expiresAt: new Date(Date.now() + ADMIN_SESSION_TTL_MS),
+          tokenHash: hashSessionToken(sessionToken),
+          userId: user.id,
+        },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          action: 'ADMIN_LOGIN',
+          payload: {
+            sessionId: session.id,
+          },
+          targetId: session.id,
+          targetType: 'ADMIN_SESSION',
+          userId: user.id,
+        },
+      });
     });
 
     return {

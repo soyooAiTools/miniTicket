@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes, scryptSync } from 'node:crypto';
 
-import { AdminAuditService } from '../../common/admin/admin-audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 type AdminUserRole = 'ADMIN' | 'OPERATIONS';
@@ -78,34 +77,40 @@ export class AdminUsersService {
     }
 
     try {
-      const user = await this.prisma.user.create({
-        data: {
-          email,
-          enabled: true,
-          name: input.name.trim(),
-          passwordHash: hashPassword(input.password),
-          role: input.role,
-        },
-        select: {
-          createdAt: true,
-          email: true,
-          enabled: true,
-          id: true,
-          name: true,
-          role: true,
-          updatedAt: true,
-        },
-      });
+      const user = await this.prisma.$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            email,
+            enabled: true,
+            name: input.name.trim(),
+            passwordHash: hashPassword(input.password),
+            role: input.role,
+          },
+          select: {
+            createdAt: true,
+            email: true,
+            enabled: true,
+            id: true,
+            name: true,
+            role: true,
+            updatedAt: true,
+          },
+        });
 
-      await new AdminAuditService(this.prisma).recordAction({
-        action: 'ADMIN_USER_CREATED',
-        actorUserId,
-        payload: {
-          email: user.email,
-          role: user.role,
-        },
-        targetId: user.id,
-        targetType: 'ADMIN_USER',
+        await tx.adminAuditLog.create({
+          data: {
+            action: 'ADMIN_USER_CREATED',
+            payload: {
+              email: createdUser.email,
+              role: createdUser.role,
+            },
+            targetId: createdUser.id,
+            targetType: 'ADMIN_USER',
+            userId: actorUserId,
+          },
+        });
+
+        return createdUser;
       });
 
       return user as AdminUserListItem;
@@ -123,52 +128,58 @@ export class AdminUsersService {
     enabled: boolean,
     actorUserId: string,
   ): Promise<AdminUserListItem> {
-    const result = await this.prisma.user.updateMany({
-      data: {
-        enabled,
-      },
-      where: {
-        id: userId,
-        role: {
-          in: ['ADMIN', 'OPERATIONS'],
+    const user = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.user.updateMany({
+        data: {
+          enabled,
         },
-      },
-    });
-
-    if (result.count === 0) {
-      throw new NotFoundException('后台账号不存在。');
-    }
-
-    const user = await this.prisma.user.findFirst({
-      select: {
-        createdAt: true,
-        email: true,
-        enabled: true,
-        id: true,
-        name: true,
-        role: true,
-        updatedAt: true,
-      },
-      where: {
-        id: userId,
-        role: {
-          in: ['ADMIN', 'OPERATIONS'],
+        where: {
+          id: userId,
+          role: {
+            in: ['ADMIN', 'OPERATIONS'],
+          },
         },
-      },
-    });
+      });
 
-    if (!user) {
-      throw new NotFoundException('后台账号不存在。');
-    }
+      if (result.count === 0) {
+        throw new NotFoundException('后台账号不存在。');
+      }
 
-    await new AdminAuditService(this.prisma).recordAction({
-      action: enabled ? 'ADMIN_USER_ENABLED' : 'ADMIN_USER_DISABLED',
-      actorUserId,
-      payload: {
-        enabled,
-      },
-      targetId: user.id,
-      targetType: 'ADMIN_USER',
+      const updatedUser = await tx.user.findFirst({
+        select: {
+          createdAt: true,
+          email: true,
+          enabled: true,
+          id: true,
+          name: true,
+          role: true,
+          updatedAt: true,
+        },
+        where: {
+          id: userId,
+          role: {
+            in: ['ADMIN', 'OPERATIONS'],
+          },
+        },
+      });
+
+      if (!updatedUser) {
+        throw new NotFoundException('后台账号不存在。');
+      }
+
+      await tx.adminAuditLog.create({
+        data: {
+          action: enabled ? 'ADMIN_USER_ENABLED' : 'ADMIN_USER_DISABLED',
+          payload: {
+            enabled,
+          },
+          targetId: updatedUser.id,
+          targetType: 'ADMIN_USER',
+          userId: actorUserId,
+        },
+      });
+
+      return updatedUser;
     });
 
     return user as AdminUserListItem;

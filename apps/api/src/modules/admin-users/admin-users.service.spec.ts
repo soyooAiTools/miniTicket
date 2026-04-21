@@ -7,6 +7,7 @@ describe('AdminUsersService', () => {
     adminAuditLog: {
       create: jest.fn(),
     },
+    $transaction: jest.fn(),
     user: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -87,18 +88,30 @@ describe('AdminUsersService', () => {
 
   it('creates an enabled admin user with a hashed password', async () => {
     (prismaMock.user.findFirst as jest.Mock).mockResolvedValue(null);
-    (prismaMock.user.create as jest.Mock).mockResolvedValue({
-      createdAt: new Date('2026-04-21T08:00:00.000Z'),
-      email: 'ops2@miniticket.local',
-      enabled: true,
-      id: 'user_ops_002',
-      name: 'Ops B',
-      role: 'OPERATIONS',
-      updatedAt: new Date('2026-04-21T08:00:00.000Z'),
-    });
-    (prismaMock.adminAuditLog.create as jest.Mock).mockResolvedValue({
-      id: 'audit_001',
-    });
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn().mockResolvedValue({
+          id: 'audit_001',
+        }),
+      },
+      user: {
+        create: jest.fn().mockResolvedValue({
+          createdAt: new Date('2026-04-21T08:00:00.000Z'),
+          email: 'ops2@miniticket.local',
+          enabled: true,
+          id: 'user_ops_002',
+          name: 'Ops B',
+          role: 'OPERATIONS',
+          updatedAt: new Date('2026-04-21T08:00:00.000Z'),
+        }),
+        findFirst: jest.fn(),
+        updateMany: jest.fn(),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
 
     const service = new AdminUsersService(prismaMock);
     const result = await service.createUser({
@@ -114,12 +127,13 @@ describe('AdminUsersService', () => {
       name: 'Ops B',
       role: 'OPERATIONS',
     });
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     expect(prismaMock.user.findFirst).toHaveBeenCalledWith({
       where: {
         email: 'ops2@miniticket.local',
       },
     });
-    expect(prismaMock.user.create).toHaveBeenCalledWith({
+    expect(txMock.user.create).toHaveBeenCalledWith({
       data: {
         email: 'ops2@miniticket.local',
         enabled: true,
@@ -137,7 +151,7 @@ describe('AdminUsersService', () => {
         updatedAt: true,
       },
     });
-    expect(prismaMock.adminAuditLog.create).toHaveBeenCalledWith({
+    expect(txMock.adminAuditLog.create).toHaveBeenCalledWith({
       data: {
         action: 'ADMIN_USER_CREATED',
         payload: {
@@ -151,11 +165,68 @@ describe('AdminUsersService', () => {
     });
   });
 
+  it('rejects createUser when audit logging fails inside the transaction', async () => {
+    (prismaMock.user.findFirst as jest.Mock).mockResolvedValue(null);
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn().mockRejectedValue(new Error('audit failed')),
+      },
+      user: {
+        create: jest.fn().mockResolvedValue({
+          createdAt: new Date('2026-04-21T08:00:00.000Z'),
+          email: 'ops2@miniticket.local',
+          enabled: true,
+          id: 'user_ops_002',
+          name: 'Ops B',
+          role: 'OPERATIONS',
+          updatedAt: new Date('2026-04-21T08:00:00.000Z'),
+        }),
+        findFirst: jest.fn(),
+        updateMany: jest.fn(),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
+
+    const service = new AdminUsersService(prismaMock);
+
+    await expect(
+      service.createUser(
+        {
+          email: 'ops2@miniticket.local',
+          name: 'Ops B',
+          password: 'OpsOps123!',
+          role: 'OPERATIONS',
+        },
+        'seed-admin-ops',
+      ),
+    ).rejects.toThrow('audit failed');
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.user.create).toHaveBeenCalledTimes(1);
+    expect(txMock.adminAuditLog.create).toHaveBeenCalledTimes(1);
+  });
+
   it('maps unique constraint errors to ConflictException', async () => {
     (prismaMock.user.findFirst as jest.Mock).mockResolvedValue(null);
-    (prismaMock.user.create as jest.Mock).mockRejectedValue({
-      code: 'P2002',
-    });
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn(),
+      },
+      user: {
+        create: jest.fn().mockRejectedValue({
+          code: 'P2002',
+        }),
+        findFirst: jest.fn(),
+        updateMany: jest.fn(),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
 
     const service = new AdminUsersService(prismaMock);
 
@@ -167,6 +238,7 @@ describe('AdminUsersService', () => {
         role: 'ADMIN',
       }, 'seed-admin-ops'),
     ).rejects.toBeInstanceOf(ConflictException);
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
   });
 
   it('rejects duplicate emails', async () => {
@@ -192,18 +264,32 @@ describe('AdminUsersService', () => {
     (prismaMock.user.updateMany as jest.Mock).mockResolvedValue({
       count: 1,
     });
-    (prismaMock.user.findFirst as jest.Mock).mockResolvedValue({
-      createdAt: new Date('2026-04-21T08:00:00.000Z'),
-      email: 'ops2@miniticket.local',
-      enabled: false,
-      id: 'user_ops_002',
-      name: 'Ops B',
-      role: 'OPERATIONS',
-      updatedAt: new Date('2026-04-21T09:00:00.000Z'),
-    });
-    (prismaMock.adminAuditLog.create as jest.Mock).mockResolvedValue({
-      id: 'audit_002',
-    });
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn().mockResolvedValue({
+          id: 'audit_002',
+        }),
+      },
+      user: {
+        create: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue({
+          createdAt: new Date('2026-04-21T08:00:00.000Z'),
+          email: 'ops2@miniticket.local',
+          enabled: false,
+          id: 'user_ops_002',
+          name: 'Ops B',
+          role: 'OPERATIONS',
+          updatedAt: new Date('2026-04-21T09:00:00.000Z'),
+        }),
+        updateMany: jest.fn().mockResolvedValue({
+          count: 1,
+        }),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
 
     const service = new AdminUsersService(prismaMock);
     const result = await service.setEnabled(
@@ -221,7 +307,8 @@ describe('AdminUsersService', () => {
       role: 'OPERATIONS',
       updatedAt: new Date('2026-04-21T09:00:00.000Z'),
     });
-    expect(prismaMock.user.updateMany).toHaveBeenCalledWith({
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.user.updateMany).toHaveBeenCalledWith({
       data: {
         enabled: false,
       },
@@ -232,7 +319,7 @@ describe('AdminUsersService', () => {
         },
       },
     });
-    expect(prismaMock.user.findFirst).toHaveBeenCalledWith({
+    expect(txMock.user.findFirst).toHaveBeenCalledWith({
       select: {
         createdAt: true,
         email: true,
@@ -249,7 +336,7 @@ describe('AdminUsersService', () => {
         },
       },
     });
-    expect(prismaMock.adminAuditLog.create).toHaveBeenCalledWith({
+    expect(txMock.adminAuditLog.create).toHaveBeenCalledWith({
       data: {
         action: 'ADMIN_USER_DISABLED',
         payload: {
@@ -262,10 +349,60 @@ describe('AdminUsersService', () => {
     });
   });
 
+  it('rejects setEnabled when audit logging fails inside the transaction', async () => {
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn().mockRejectedValue(new Error('audit failed')),
+      },
+      user: {
+        create: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue({
+          createdAt: new Date('2026-04-21T08:00:00.000Z'),
+          email: 'ops2@miniticket.local',
+          enabled: false,
+          id: 'user_ops_002',
+          name: 'Ops B',
+          role: 'OPERATIONS',
+          updatedAt: new Date('2026-04-21T09:00:00.000Z'),
+        }),
+        updateMany: jest.fn().mockResolvedValue({
+          count: 1,
+        }),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
+
+    const service = new AdminUsersService(prismaMock);
+
+    await expect(
+      service.setEnabled('user_ops_002', false, 'seed-admin-ops'),
+    ).rejects.toThrow('audit failed');
+
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.user.updateMany).toHaveBeenCalledTimes(1);
+    expect(txMock.adminAuditLog.create).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects non-admin users when toggling enabled state', async () => {
-    (prismaMock.user.updateMany as jest.Mock).mockResolvedValue({
-      count: 0,
-    });
+    const txMock = {
+      adminAuditLog: {
+        create: jest.fn(),
+      },
+      user: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({
+          count: 0,
+        }),
+      },
+    } as never;
+    (prismaMock.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: never) => Promise<never>) =>
+        callback(txMock),
+    );
 
     const service = new AdminUsersService(prismaMock);
 
@@ -274,7 +411,8 @@ describe('AdminUsersService', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(prismaMock.user.findFirst).not.toHaveBeenCalled();
-    expect(prismaMock.user.updateMany).toHaveBeenCalledWith({
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    expect(txMock.user.updateMany).toHaveBeenCalledWith({
       data: {
         enabled: true,
       },
