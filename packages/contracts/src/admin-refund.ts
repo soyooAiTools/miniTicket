@@ -11,6 +11,7 @@ export const adminRefundStatusSchema = z.enum([
 export const adminRefundQueueItemSchema = z
   .object({
     id: z.string().min(1),
+    refundNo: z.string().min(1),
     orderId: z.string().min(1),
     orderNumber: z.string().min(1),
     status: adminRefundStatusSchema,
@@ -18,20 +19,16 @@ export const adminRefundQueueItemSchema = z
     currency: z.string().min(1),
     reason: z.string().min(1),
     requesterName: z.string().min(1),
-    createdAt: z.string().datetime(),
+    requestedAt: z.string().datetime(),
   })
   .strict();
 
 export const adminRefundDetailSchema = adminRefundQueueItemSchema.extend({
-  approvedAt: z.string().datetime().optional(),
-  approvedBy: z.string().min(1).optional(),
-  approvalNote: z.string().min(1).optional(),
-  rejectedAt: z.string().datetime().optional(),
-  rejectedBy: z.string().min(1).optional(),
+  reviewedByUserId: z.string().min(1).optional(),
+  reviewNote: z.string().min(1).optional(),
   rejectionReason: z.string().min(1).optional(),
-  processedAt: z.string().datetime().optional(),
-  processedBy: z.string().min(1).optional(),
-  handlingNote: z.string().min(1).optional(),
+  processedByUserId: z.string().min(1).optional(),
+  lastHandledAt: z.string().datetime().optional(),
 });
 
 export const adminRefundApproveRequestSchema = z
