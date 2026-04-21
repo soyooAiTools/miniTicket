@@ -1,0 +1,24 @@
+<svg width="1080" height="1440" viewBox="0 0 1080 1440" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="galaxy-bg" x1="90" y1="100" x2="950" y2="1360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1530"/>
+      <stop offset="0.48" stop-color="#324A86"/>
+      <stop offset="1" stop-color="#F3F6FF"/>
+    </linearGradient>
+    <radialGradient id="galaxy-core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(540 340) rotate(90) scale(286 314)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.52" stop-color="#D6E2FF" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#D6E2FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#galaxy-bg)"/>
+  <circle cx="540" cy="340" r="286" fill="url(#galaxy-core)"/>
+  <circle cx="540" cy="340" r="202" stroke="#F4F7FF" stroke-opacity="0.6" stroke-width="10"/>
+  <circle cx="540" cy="340" r="254" stroke="#F4F7FF" stroke-opacity="0.24" stroke-width="8"/>
+  <path d="M214 1018C322 980 422 960 540 960C658 960 758 980 866 1018V1440H214V1018Z" fill="#12284B"/>
+  <path d="M0 1148C190 1086 344 1050 540 1050C736 1050 890 1086 1080 1148V1440H0V1148Z" fill="#09172E"/>
+  <circle cx="280" cy="194" r="8" fill="#F7FBFF"/>
+  <circle cx="374" cy="122" r="5" fill="#F7FBFF" fill-opacity="0.72"/>
+  <circle cx="754" cy="154" r="7" fill="#F7FBFF" fill-opacity="0.84"/>
+  <circle cx="830" cy="270" r="5" fill="#F7FBFF" fill-opacity="0.58"/>
+</svg>

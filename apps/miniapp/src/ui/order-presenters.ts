@@ -16,10 +16,17 @@ type PaymentResultMeta = {
   tone: 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 };
 
+type OrderTimelineMeta = {
+  description: string;
+  title: string;
+};
+
 type RefundEntryInput = {
   refundEntryEnabled: boolean;
   status: OrderStatus;
 };
+
+type TicketType = OrderListItem['ticketType'];
 
 const REFUND_REQUESTABLE_STATUSES = new Set<OrderStatus>([
   'PAID_PENDING_FULFILLMENT',
@@ -40,7 +47,7 @@ export function buildOrderDashboard(orders: OrderListItem[]) {
   )[0];
 
   return {
-    latestOrderLabel: latestOrder?.event.title ?? 'No recent order',
+    latestOrderLabel: latestOrder?.event.title ?? '最近订单',
     openAfterSalesCount: orders.filter(
       (order) => order.refundEntryEnabled && REFUND_REQUESTABLE_STATUSES.has(order.status),
     ).length,
@@ -55,60 +62,54 @@ export function getRefundEntrySummary(
 ): RefundEntrySummary {
   if (!input.refundEntryEnabled) {
     return {
-      ctaLabel: 'View policy',
-      description:
-        'Refund entry follows the event rule set and will only open when this order becomes eligible.',
+      ctaLabel: '查看订单',
+      description: '以当前订单状态和活动规则为准',
       eligible: false,
-      title: 'Refund entry is not available yet',
+      title: '暂不可售后',
     };
   }
 
   if (input.status === 'REFUND_REVIEWING') {
     return {
-      ctaLabel: 'View refund progress',
-      description:
-        'Your request is already in review. Keep an eye on the order timeline for the final decision.',
+      ctaLabel: '查看进度',
+      description: '审核结果会同步到订单',
       eligible: false,
-      title: 'Refund review is in progress',
+      title: '退款审核中',
     };
   }
 
   if (input.status === 'REFUND_PROCESSING') {
     return {
-      ctaLabel: 'View refund progress',
-      description:
-        'The refund request has been submitted upstream and is now being processed.',
+      ctaLabel: '查看进度',
+      description: '退款将按原路退回',
       eligible: false,
-      title: 'Refund is processing',
+      title: '退款处理中',
     };
   }
 
   if (input.status === 'REFUNDED') {
     return {
-      ctaLabel: 'View refund details',
-      description:
-        'This order has already completed the refund flow. The final amount will stay on the order record.',
+      ctaLabel: '查看详情',
+      description: '退款金额已确认',
       eligible: false,
-      title: 'Refund completed',
+      title: '已退款',
     };
   }
 
   if (REFUND_REQUESTABLE_STATUSES.has(input.status)) {
     return {
-      ctaLabel: 'Request refund',
-      description:
-        'Refund entry is now open. Review the fee deduction rule before you submit the request.',
+      ctaLabel: '申请退款',
+      description: '提交前请确认扣费规则',
       eligible: true,
-      title: 'Refund entry is open',
+      title: '可申请退款',
     };
   }
 
   return {
-    ctaLabel: 'View order timeline',
-    description:
-      'The order still needs to reach a post-payment state before after-sales actions can open.',
+    ctaLabel: '查看订单',
+    description: '请等待订单进入可售后状态',
     eligible: false,
-    title: 'Wait for order progress',
+    title: '暂不可售后',
   };
 }
 
@@ -116,55 +117,112 @@ export function getPaymentResultMeta(status: OrderStatus): PaymentResultMeta {
   switch (status) {
     case 'PENDING_PAYMENT':
       return {
-        description:
-          'The platform is still confirming the order state after payment initiation. We will keep syncing the latest result.',
-        title: 'Confirming payment result',
+        description: '支付状态正在同步',
+        title: '支付结果确认中',
         tone: 'warning',
       };
     case 'PAID_PENDING_FULFILLMENT':
     case 'SUBMITTED_TO_VENDOR':
       return {
-        description:
-          'Payment has been accepted and the order is moving through the fulfillment pipeline.',
-        title: 'Payment confirmed',
+        description: '票务处理中',
+        title: '支付成功',
         tone: 'info',
       };
     case 'TICKET_ISSUED':
     case 'COMPLETED':
       return {
-        description:
-          'Payment is complete and the order is already in a successful delivery state.',
-        title: 'Payment confirmed',
+        description: '订单已进入可使用状态',
+        title: '购票成功',
         tone: 'success',
       };
     case 'TICKET_FAILED':
       return {
-        description:
-          'Payment succeeded, but ticket fulfillment needs manual follow-up. Please review the order timeline.',
-        title: 'Manual follow-up needed',
+        description: '订单已进入人工处理',
+        title: '出票异常',
         tone: 'danger',
       };
     case 'REFUND_REVIEWING':
     case 'REFUND_PROCESSING':
     case 'REFUNDED':
       return {
-        description:
-          'Payment completed earlier, and this order is now in an after-sales flow.',
-        title: 'Order moved to after-sales',
+        description: '订单已进入售后流程',
+        title: '订单处理中',
         tone: 'neutral',
       };
     case 'CLOSED':
       return {
-        description:
-          'This order has been closed. Review the full order record for the latest platform action.',
-        title: 'Order closed',
+        description: '请查看订单记录',
+        title: '订单已关闭',
         tone: 'neutral',
       };
     default:
       return {
-        description: 'Review the latest timeline update on the order detail page.',
-        title: 'Order updated',
+        description: '请查看订单详情',
+        title: '订单状态已更新',
         tone: 'neutral',
+      };
+  }
+}
+
+export function getOrderTimelineMeta(
+  status: OrderStatus,
+  ticketType: TicketType,
+): OrderTimelineMeta {
+  switch (status) {
+    case 'PENDING_PAYMENT':
+      return {
+        title: '等待支付',
+        description: '请在有效时间内完成支付',
+      };
+    case 'PAID_PENDING_FULFILLMENT':
+      return {
+        title: '已支付',
+        description: '订单正在进入票务处理',
+      };
+    case 'SUBMITTED_TO_VENDOR':
+      return {
+        title: '出票中',
+        description: '平台已提交票务系统',
+      };
+    case 'TICKET_ISSUED':
+      return {
+        title: '出票完成',
+        description: ticketType === 'PAPER_TICKET' ? '纸质票信息已确认' : '电子票已可查看',
+      };
+    case 'TICKET_FAILED':
+      return {
+        title: '出票异常',
+        description: '请联系平台处理',
+      };
+    case 'REFUND_REVIEWING':
+      return {
+        title: '退款审核中',
+        description: '等待审核结果',
+      };
+    case 'REFUND_PROCESSING':
+      return {
+        title: '退款处理中',
+        description: '退款将按原路退回',
+      };
+    case 'REFUNDED':
+      return {
+        title: '已退款',
+        description: '退款已完成',
+      };
+    case 'COMPLETED':
+      return {
+        title: '订单完成',
+        description: '订单已完成',
+      };
+    case 'CLOSED':
+      return {
+        title: '订单关闭',
+        description: '当前订单已关闭',
+      };
+    default:
+      return {
+        title: '处理中',
+        description: '请稍后查看最新状态',
       };
   }
 }

@@ -12,11 +12,12 @@ import {
 } from '../../components/ui';
 import { request } from '../../services/request';
 import { ensureSession } from '../../services/session';
+import { getShowcaseViewers, shouldUseShowcaseContent } from '../../ui/showcase-data';
 
 type ViewerItem = {
   id: string;
-  name: string;
   mobile: string;
+  name: string;
 };
 
 type ViewersResponse = {
@@ -49,6 +50,17 @@ export default function ViewersPage() {
   });
 
   const loadViewers = async () => {
+    if (shouldUseShowcaseContent()) {
+      setItems(
+        getShowcaseViewers().map((viewer) => ({
+          id: viewer.id,
+          mobile: viewer.mobile,
+          name: viewer.name,
+        })),
+      );
+      return;
+    }
+
     try {
       await ensureSession();
       const response = await request<ViewersResponse>({
@@ -101,13 +113,12 @@ export default function ViewersPage() {
   return (
     <PageShell dense>
       <PageHero
-        description={
-          isSelectionMode
-            ? '选择参与当前票档购票的实名观演人，然后继续进入支付确认。'
-            : '管理常用实名观演人，结算时可以直接选择。'
+        meta={
+          isSelectionMode ? (
+            <Text className='calendar-item__meta'>已选 {selectedCount} 人</Text>
+          ) : undefined
         }
-        eyebrow='Viewers'
-        title='观演人管理'
+        title={isSelectionMode ? '选择观演人' : '观演人'}
       />
 
       {items.length === 0 ? (
@@ -122,8 +133,7 @@ export default function ViewersPage() {
                 </PrimaryButton>
               </View>
             }
-            description='先补齐实名观演人信息，后续购票就可以直接选择。'
-            title='还没有可用观演人'
+            title='暂无观演人'
           />
         </SurfaceCard>
       ) : (
@@ -134,14 +144,12 @@ export default function ViewersPage() {
             <SurfaceCard key={item.id} muted={active}>
               <View onClick={() => (isSelectionMode ? toggleViewer(item.id) : undefined)}>
                 <Text className='section-heading__title'>{item.name}</Text>
-                <Text className='section-heading__description'>{item.mobile}</Text>
-                <Text className='calendar-item__meta'>
-                  {isSelectionMode
-                    ? active
-                      ? '已加入本次购票'
-                      : '点击加入当前票档'
-                    : '实名信息已保存，可在购票时直接复用。'}
-                </Text>
+                <Text className='calendar-item__meta'>{item.mobile}</Text>
+                {isSelectionMode ? (
+                  <Text className='calendar-item__meta'>
+                    {active ? '已选中' : '点击选择'}
+                  </Text>
+                ) : null}
               </View>
             </SurfaceCard>
           );
@@ -160,9 +168,7 @@ export default function ViewersPage() {
       {isSelectionMode ? (
         <StickyActionBar>
           <PrimaryButton disabled={selectedCount === 0} onClick={proceedToCheckout}>
-            {selectedCount === 0
-              ? '选择观演人后继续'
-              : `继续支付 · 已选 ${selectedCount} 人`}
+            {selectedCount === 0 ? '选择观演人后继续' : `继续支付 · 已选 ${selectedCount} 人`}
           </PrimaryButton>
           {selectedSummary.length > 0 ? (
             <Text

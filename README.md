@@ -2,6 +2,16 @@
 
 Monorepo for an authorized ticketing platform with a Nest API, a Taro miniapp, an admin web app, and shared contract schemas.
 
+## Handoff
+
+For the current developer handoff package, start here:
+
+- [docs/handoff/README.md](docs/handoff/README.md)
+- [docs/handoff/requirements-summary.md](docs/handoff/requirements-summary.md)
+- [docs/handoff/development-handoff.md](docs/handoff/development-handoff.md)
+- [docs/handoff/project-status-and-next-steps.md](docs/handoff/project-status-and-next-steps.md)
+- [docs/handoff/team-handoff-checklist.md](docs/handoff/team-handoff-checklist.md)
+
 ## Workspace
 
 - `apps/api`: NestJS backend for auth, catalog, checkout, fulfillment, payments, refunds, viewers, and related support modules

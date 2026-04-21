@@ -1,0 +1,21 @@
+<svg width="1080" height="1440" viewBox="0 0 1080 1440" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="daylight-bg" x1="120" y1="88" x2="960" y2="1332" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1D3557"/>
+      <stop offset="0.4" stop-color="#52759E"/>
+      <stop offset="1" stop-color="#F6F8FC"/>
+    </linearGradient>
+    <radialGradient id="daylight-sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(544 262) rotate(90) scale(232 248)">
+      <stop stop-color="#FFF8E0"/>
+      <stop offset="0.56" stop-color="#FFF8E0" stop-opacity="0.74"/>
+      <stop offset="1" stop-color="#FFF8E0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#daylight-bg)"/>
+  <circle cx="544" cy="262" r="232" fill="url(#daylight-sun)"/>
+  <path d="M0 916C140 854 294 824 446 824H634C786 824 940 854 1080 916V1440H0V916Z" fill="#213554"/>
+  <path d="M126 894C232 850 356 828 482 828H598C724 828 848 850 954 894V1440H126V894Z" fill="#3C587D"/>
+  <path d="M300 678L420 520L540 690L654 472L782 678H300Z" fill="#F2F6FC" fill-opacity="0.26"/>
+  <rect x="252" y="1060" width="576" height="22" rx="11" fill="#D9E5F5" fill-opacity="0.28"/>
+  <rect x="318" y="1110" width="444" height="16" rx="8" fill="#D9E5F5" fill-opacity="0.22"/>
+</svg>

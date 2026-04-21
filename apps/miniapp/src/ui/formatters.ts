@@ -1,14 +1,14 @@
-const compactDateFormatter = new Intl.DateTimeFormat('en-US', {
-  day: '2-digit',
-  month: 'short',
+const compactDateFormatter = new Intl.DateTimeFormat('zh-CN', {
+  day: 'numeric',
+  month: 'numeric',
   year: 'numeric',
 });
 
-const compactDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
-  day: '2-digit',
+const compactDateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  day: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-  month: 'short',
+  month: 'numeric',
   year: 'numeric',
 });
 
@@ -19,7 +19,7 @@ function toValidDate(value: string) {
 }
 
 export function formatCurrencyCny(value: number) {
-  return `${value} RMB`;
+  return `¥${value}`;
 }
 
 export function formatCompactDate(value: string) {
@@ -36,16 +36,16 @@ export function formatCompactDateTime(value: string) {
 
 export function formatSaleWindow(startAt?: string, endAt?: string) {
   if (startAt && endAt) {
-    return `${formatCompactDate(startAt)} - ${formatCompactDate(endAt)}`;
+    return `${formatCompactDate(startAt)} 至 ${formatCompactDate(endAt)}`;
   }
 
   if (startAt) {
-    return `Starts ${formatCompactDate(startAt)}`;
+    return `${formatCompactDate(startAt)} 开售`;
   }
 
   if (endAt) {
-    return `Ends ${formatCompactDate(endAt)}`;
+    return `${formatCompactDate(endAt)} 截止`;
   }
 
-  return 'Schedule to be announced';
+  return '待公布';
 }

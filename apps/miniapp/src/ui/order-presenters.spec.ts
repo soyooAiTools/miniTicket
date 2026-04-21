@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildOrderDashboard,
+  getOrderTimelineMeta,
   getPaymentResultMeta,
   getRefundEntrySummary,
 } from './order-presenters';
@@ -69,20 +70,20 @@ describe('buildOrderDashboard', () => {
 });
 
 describe('getRefundEntrySummary', () => {
-  it('explains when a refund entry is already active', () => {
+  it('returns refund copy for eligible orders', () => {
     expect(
       getRefundEntrySummary({
         refundEntryEnabled: true,
         status: 'TICKET_ISSUED',
       }),
     ).toMatchObject({
-      ctaLabel: 'Request refund',
+      ctaLabel: '申请退款',
       eligible: true,
-      title: 'Refund entry is open',
+      title: '可申请退款',
     });
   });
 
-  it('explains when the user needs to wait', () => {
+  it('returns a waiting state when refund entry is closed', () => {
     expect(
       getRefundEntrySummary({
         refundEntryEnabled: false,
@@ -90,7 +91,7 @@ describe('getRefundEntrySummary', () => {
       }),
     ).toMatchObject({
       eligible: false,
-      title: 'Refund entry is not available yet',
+      title: '暂不可售后',
     });
   });
 });
@@ -98,7 +99,7 @@ describe('getRefundEntrySummary', () => {
 describe('getPaymentResultMeta', () => {
   it('treats issued orders as a completed payment state', () => {
     expect(getPaymentResultMeta('TICKET_ISSUED')).toMatchObject({
-      title: 'Payment confirmed',
+      title: '购票成功',
       tone: 'success',
     });
   });
@@ -106,7 +107,23 @@ describe('getPaymentResultMeta', () => {
   it('keeps pending orders in a waiting state', () => {
     expect(getPaymentResultMeta('PENDING_PAYMENT')).toMatchObject({
       tone: 'warning',
-      title: 'Confirming payment result',
+      title: '支付结果确认中',
+    });
+  });
+});
+
+describe('getOrderTimelineMeta', () => {
+  it('uses ticket type to describe issued orders', () => {
+    expect(getOrderTimelineMeta('TICKET_ISSUED', 'PAPER_TICKET')).toMatchObject({
+      title: '出票完成',
+      description: '纸质票信息已确认',
+    });
+  });
+
+  it('maps pending payment to concise Chinese status copy', () => {
+    expect(getOrderTimelineMeta('PENDING_PAYMENT', 'E_TICKET')).toMatchObject({
+      title: '等待支付',
+      description: '请在有效时间内完成支付',
     });
   });
 });

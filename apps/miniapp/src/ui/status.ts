@@ -12,20 +12,20 @@ export type StatusMeta = {
 export function getSaleStatusMeta(status: SaleStatus): StatusMeta {
   if (status === 'ON_SALE') {
     return {
-      label: 'On sale',
+      label: '热卖中',
       tone: 'accent',
     };
   }
 
   if (status === 'UPCOMING') {
     return {
-      label: 'Coming soon',
+      label: '待开售',
       tone: 'info',
     };
   }
 
   return {
-    label: 'Sold out',
+    label: '已售罄',
     tone: 'neutral',
   };
 }
@@ -33,30 +33,30 @@ export function getSaleStatusMeta(status: SaleStatus): StatusMeta {
 export function getOrderStatusMeta(status: OrderStatus): StatusMeta {
   switch (status) {
     case 'PENDING_PAYMENT':
-      return { label: 'Pending payment', tone: 'warning' };
+      return { label: '待支付', tone: 'warning' };
     case 'PAID_PENDING_FULFILLMENT':
-      return { label: 'Pending fulfillment', tone: 'info' };
+      return { label: '待出票', tone: 'info' };
     case 'SUBMITTED_TO_VENDOR':
-      return { label: 'Vendor processing', tone: 'info' };
+      return { label: '出票中', tone: 'info' };
     case 'TICKET_ISSUED':
-      return { label: 'Issued', tone: 'success' };
+      return { label: '已出票', tone: 'success' };
     case 'TICKET_FAILED':
-      return { label: 'Issue failed', tone: 'danger' };
+      return { label: '出票失败', tone: 'danger' };
     case 'REFUND_REVIEWING':
-      return { label: 'Refund reviewing', tone: 'warning' };
+      return { label: '退款审核中', tone: 'warning' };
     case 'REFUND_PROCESSING':
-      return { label: 'Refund processing', tone: 'info' };
+      return { label: '退款处理中', tone: 'info' };
     case 'REFUNDED':
-      return { label: 'Refunded', tone: 'neutral' };
+      return { label: '已退款', tone: 'neutral' };
     case 'COMPLETED':
-      return { label: 'Completed', tone: 'success' };
+      return { label: '已完成', tone: 'success' };
     case 'CLOSED':
-      return { label: 'Closed', tone: 'neutral' };
+      return { label: '已关闭', tone: 'neutral' };
     default:
       return { label: status, tone: 'neutral' };
   }
 }
 
 export function getTicketTypeLabel(ticketType: TicketType) {
-  return ticketType === 'PAPER_TICKET' ? 'Paper ticket' : 'E-ticket';
+  return ticketType === 'PAPER_TICKET' ? '纸质票' : '电子票';
 }

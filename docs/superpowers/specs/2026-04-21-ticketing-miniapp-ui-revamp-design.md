@@ -2,482 +2,440 @@
 
 ## Overview
 
-This spec defines the first full UI revamp for the `miniTicket` miniapp. The current app is functionally useful but visually reads like a product demo. The goal of this redesign is to turn it into a credible, efficient, official-looking ticketing platform for large concerts and idol performances.
+This spec replaces the earlier first-pass miniapp UI revamp direction with a more decisive product direction. The current miniapp is functional, but it still feels like a polished demo instead of a real official ticketing platform. The next iteration should correct that by simplifying the information architecture, stripping explanatory copy, and upgrading the typography and spacing system so the product feels premium rather than merely usable.
 
-The redesign will keep the existing business flows and API contracts, but replace the current ad hoc page styling with a coherent product UI system. The selected direction is a `high-efficiency platform` rather than an editorial campaign site or a single-event landing page.
+The platform positioning remains the same: this is an official ticketing miniapp for large concerts, idol performances, and recurring event operations. What changes in this spec is the execution standard. The miniapp should no longer explain itself with paragraphs. It should communicate through structure, hierarchy, typography, and motion.
 
-`frontend-slides` is in scope as a visual exploration aid for mockups and design direction review, but not as the production implementation model. The production UI will still be built in the existing Taro miniapp codebase.
+## Approved Direction
 
-## Product Direction
+The approved visual and product direction is:
 
-### Positioning
+- product type: official multi-event ticketing platform
+- tone: official flagship, light-premium, restrained
+- palette: ice white and very light blue-gray
+- interaction bias: efficient first, premium second
+- emotional layer: large poster-led cards
+- typography: mostly official and elevated, with a `7:3` blend of modern Songti-like refinement and condensed poster-like sharpness
+
+The approved structural direction is:
+
+- `Home` and `Events` should be merged in product meaning
+- the homepage becomes the single primary discovery surface
+- the bottom navigation should be simplified to `Home / Orders / Me`
+- the current `Events` route should no longer behave like a separate first-class tab
+
+The approved content direction is:
+
+- remove explanatory or descriptive filler copy across the app
+- do not describe what a section already visually communicates
+- pages should rely on headlines, hard metadata, state labels, and primary actions
+- short labels are acceptable; tutorial-like copy is not
+
+## Product Intent
 
 The miniapp should feel like:
 
-- an official ticketing platform
-- efficient enough for frequent purchase behavior
-- visually polished enough to avoid a demo or template feel
-- suitable for large concerts, idol performances, and recurring event operations
+- the official ticketing entrance for high-demand events
+- stable enough for repeated purchase behavior
+- premium enough to support brand trust
+- fast enough that users do not have to read to understand
 
 The miniapp should not feel like:
 
-- a one-off event campaign microsite
-- a content magazine
+- a design exercise
+- a content-rich editorial product
 - a fan community product
-- a generic tools-only admin surface
+- a tooling dashboard pretending to be consumer software
+- a demo that explains itself through empty-state and section descriptions
 
-### Chosen Design Direction
-
-The approved direction is:
-
-- platform type: official ticketing platform home, supporting multiple events at once
-- visual tone: light, crisp, premium, and restrained
-- primary palette bias: ice white and very light blue-gray
-- visual emphasis: large poster-led event cards
-- interaction character: efficient first, with light premium motion
-- homepage priority: first-screen impact plus clear ticketing entry points
-
-### Success Criteria
+## Success Criteria
 
 The redesign is successful when:
 
-- the homepage immediately reads as an official ticketing platform
-- users can identify what is on sale, what is coming soon, and where to act within seconds
-- event cards, detail pages, and orders feel consistent and intentionally designed
-- the purchase path feels clearer and more trustworthy than the current demo-like version
-- the app remains easy to extend for future event operations
-
-## Goals And Non-Goals
-
-### Goals
-
-- establish a full miniapp UI system instead of page-by-page styling
-- redesign all customer-facing pages in the miniapp
-- prioritize ticket discovery, purchase conversion, and order clarity
-- introduce consistent motion, spacing, status language, and card behavior
-- preserve the existing business logic and flow structure where possible
-
-### Non-Goals
-
-- changing backend contracts or core purchase rules
-- turning the homepage into a content-heavy editorial experience
-- adding social/community features
-- redesigning the admin console in this phase
-- building a marketing slide deck as the shipping product surface
+- users understand within one screen that this is a real official ticketing platform
+- the homepage already functions as the full ticket-discovery surface
+- `Home` and `Events` no longer feel duplicated
+- the interface stops relying on descriptive helper copy
+- the typography feels intentional and premium rather than default and generic
+- the app feels quieter, cleaner, and more trustworthy without becoming bland
 
 ## Information Architecture
 
 ### Bottom Navigation
 
-The miniapp will use four persistent tabs:
+The persistent bottom navigation should become:
 
 - `Home`
-- `Events`
 - `Orders`
 - `Me`
 
-This split gives the product a stable platform structure:
+This change is not cosmetic. It reflects a clearer product model:
 
-- `Home` is the operational entry point
-- `Events` is the complete browse-and-filter surface
-- `Orders` is the fulfillment and status surface
-- `Me` is the tools and service surface
+- `Home` becomes the main ticket-discovery and event-browsing surface
+- `Orders` remains the fulfillment and after-sales surface
+- `Me` remains the service and account tools surface
 
-### Task Pages
+### Events Route
 
-Supporting task pages remain outside the main tab bar:
-
-- event detail page
-- checkout / confirm payment page
-- payment result page
-- order detail page
-- viewers page
-- viewer form page
-- after-sales page
-- purchase policy page
-- privacy policy page
-
-## Core Page Designs
-
-### Home
-
-The homepage is the front door of the platform, not a single featured campaign page.
-
-#### Structure
-
-- top search and city switch area
-- hot selling event stream
-- upcoming sale section
-- hot ranking module
-- sale calendar module
-
-#### Role
-
-The homepage should help users answer:
-
-- what is worth buying now
-- what is about to open
-- what is popular
-- what is opening soon
-
-#### Visual Behavior
-
-- single-column large poster cards
-- large image first, then compact metadata
-- strong rhythm through spacing rather than dense copy
-- platform modules use quiet containers so posters remain the primary visual focus
-
-### Events
-
-The events page is the full browsing and finding surface.
-
-#### Structure
-
-- compact filter and sort bar at the top
-- single-column poster-led event list
-- clearer metadata density than the homepage
-
-#### Required Metadata Per Card
-
-- event title
-- city
-- venue
-- date or schedule label
-- sale status
-- starting price
-
-#### Role
-
-This page is optimized for finding, comparing, and entering detail pages quickly. It should feel more operational than the homepage, but still visually premium.
-
-### Event Detail
-
-The detail page should prioritize conversion before long-form content.
-
-#### First Screen
-
-- large poster
-- event title
-- city, venue, and time
-- sale status
-- primary purchase button or ticket-tier entry
-
-#### Secondary Sections
-
-- sessions and ticket tiers
-- inventory and sale-state hints
-- event introduction
-- purchase notes
-- refund rules
-
-#### Sticky Action Area
-
-The page should use a persistent action zone near the bottom with state-based behavior:
-
-- `Buy Now`
-- `Coming Soon`
-- `Sold Out`
-- `View Order`
-
-The first screen should answer whether the event can be purchased right now and how to proceed.
-
-## Transaction And Service Pages
-
-### Checkout
-
-The checkout page should be focused, low-noise, and action-led.
-
-#### Structure
-
-- selected tier and quantity summary
-- viewer confirmation area
-- condensed purchase and refund notes
-- fixed primary payment button
-
-This page should reduce visual variety and keep users oriented around finishing the payment flow.
-
-### Payment Result
-
-The payment result page should clearly communicate one of three states:
-
-- payment successful, waiting for fulfillment
-- payment processing
-- payment failed
-
-Each state must provide an unambiguous next action:
-
-- view order
-- return to homepage
-- retry payment
-
-### Orders
-
-The orders page should help users understand fulfillment progress quickly.
-
-#### Structure
-
-- status tabs: pending payment, pending fulfillment, completed, after-sales
-- order cards with poster thumbnail and primary metadata
-- state-aware action buttons
-
-#### Card Fields
-
-- event poster thumbnail
-- event title
-- session time
-- order amount
-- order state
-- primary action
-
-### Order Detail
-
-The order detail page is a trust page and should be optimized for clarity.
-
-#### Structure
-
-- primary status block
-- event and session information
-- tier and viewer information
-- state-aware action area
-
-This page should feel reliable and structured, with minimal decorative noise.
-
-### After-Sales
-
-The after-sales page should be procedural and calm.
-
-#### Structure
-
-- order summary
-- refund rule summary
-- reason selection and note input
-- current handling progress
-- outcome feedback
-
-The focus is clarity and reassurance rather than expressive design.
-
-### Me
-
-The `Me` page should be a high-efficiency tool panel rather than a member identity center.
-
-#### Structure
-
-- lightweight user summary area
-- quick actions
-- service and support section
-
-#### Core Entries
-
-- my orders
-- viewers
-- after-sales
-- purchase policy
-- privacy policy
-- support / contact
-
-### Viewers
-
-The viewers experience should be clean and form-driven.
-
-#### Structure
-
-- viewers list with concise identity display
-- create, edit, and delete actions
-- clean form page with strong real-name guidance
-
-## Visual System
-
-### Visual Keywords
-
-- official
-- efficient
-- light premium
-- poster-led
-- restrained
-
-### Palette Direction
-
-The palette should use:
-
-- ice white as the primary canvas
-- very light blue-gray for secondary surfaces
-- soft silver-gray for separators and neutral controls
-- one restrained accent for key action emphasis
-- restrained status colors for sale and order states
-
-The app should avoid:
-
-- heavy black-and-gold stage styling as the primary theme
-- loud gradient marketing surfaces
-- e-commerce red/orange urgency overload
-- visually dense dark UI
-
-### Poster Strategy
-
-Large posters are the main emotional layer of the interface. Platform surfaces should be designed to frame posters, not compete with them.
+The `Events` route should not remain a separate destination in the primary product model. To avoid breaking navigation assumptions and old links, the route may still exist technically, but it should resolve to the same content model as `Home` or redirect users into the main discovery surface.
 
 This means:
 
-- single-column large poster cards on home and events
-- strong card proportions
-- clean text blocks below or overlaid with careful contrast
-- minimal unnecessary chrome around cards
+- no separate bottom-tab emphasis for `Events`
+- no duplicated page concept between `Home` and `Events`
+- no second discovery page with slightly different wording
 
-### Typography Strategy
+### Supporting Pages
 
-The miniapp should favor a system-safe typography approach suitable for WeChat mini programs:
+These remain outside the bottom navigation:
 
-- clean sans-serif rendering
-- strong hierarchy through weight, size, and spacing
-- restrained uppercase or tracking treatments only for section labels
+- event detail
+- checkout
+- payment result
+- order detail
+- viewers
+- viewer form
+- after-sales
+- purchase policy
+- privacy policy
 
-The design should not depend on custom webfont loading for core quality.
+## Content Strategy
 
-## Motion System
+### Copy Reduction Rule
 
-Motion should support hierarchy and quality without slowing task completion.
+Every customer-facing page should follow one rule:
 
-### Approved Motion Types
+> If the user can already understand it from the title, layout, card, or state label, do not explain it in body copy.
 
-- card fade-in and rise on first paint
-- subtle image and text stagger on key entry surfaces
-- gentle pressed, hover-like, and status transitions
-- light filter-result transitions
-- state transitions on buttons and order statuses
+This affects:
 
-### Motion Rules
+- `PageHero.description`
+- `SectionHeading.description`
+- card descriptions that restate visible metadata
+- tool-entry helper paragraphs
+- empty-state paragraphs that narrate obvious absence
+- module intros such as “this section helps you…”
 
-- no heavy theatrical transitions
-- no flashy scale bursts or aggressive parallax
-- motion should guide attention, not become the message
-- loading and empty states should feel calm and polished
+### Acceptable Copy
 
-## Component System
+The app should still use short, functional copy where needed:
 
-The redesign should be built around reusable miniapp components rather than one-off page styling.
+- page titles
+- section titles
+- state labels
+- primary and secondary actions
+- small policy or rule summaries where the user must make a decision
+- transactional feedback such as payment, issuance, and refund status
 
-### Priority Components
+### Unacceptable Copy
 
-- large poster event card
-- status chip
-- top search and filter strip
-- session and ticket-tier selector
-- sticky purchase action bar
-- order status card
-- tool entry card
-- standardized empty, loading, and error states
+The app should avoid:
 
-### Shared Layout Rules
+- “this page helps you…”
+- “here you can…”
+- “the platform lets you…”
+- “we bring together…”
+- “official information is synced here…”
+- verbose empty-state explanations
 
-- consistent page gutters and section spacing
-- consistent card radius families
-- consistent quiet surface treatment
-- consistent primary and secondary button styles
-- consistent status language across event, order, and refund flows
+The interface should feel confident enough not to narrate itself.
 
-## Content Modules
+## Typography Strategy
 
-The homepage should include only two platform-style support modules beyond event feeds:
+Typography is one of the main reasons the current UI feels low-grade. The redesign should introduce a dual-layer type strategy instead of relying on a generic single-font feeling.
 
-- sale calendar
-- hot ranking
+### Title Layer
 
-This keeps the product platform-like without drifting into editorial complexity.
+The title layer should aim for `official advanced` rather than trendy or playful.
+
+The intended feel is:
+
+- mostly official
+- slightly poster-like
+- calm and sharp rather than dramatic
+
+The visual result should resemble:
+
+- modern Songti-style refinement in rhythm and spacing
+- compact, slightly narrowed headline presence
+- stronger hierarchy through size and margin rather than decorative treatment
+
+Because miniapp runtime font support is constrained, the implementation should not depend on network-loaded webfonts. The title layer should instead be achieved through:
+
+- a dedicated display font stack where supported
+- stronger contrast between title and body typography
+- tighter, more deliberate line lengths
+- larger heading scale differences
+- more disciplined letter and block spacing
+
+### Information Layer
+
+The information layer should remain highly readable:
+
+- clean
+- neutral
+- uncluttered
+- system-safe
+
+This layer is for:
+
+- venue
+- city
+- time
+- price
+- order metadata
+- viewer information
+- policy details
+
+The information layer should never compete with the poster or title layer.
+
+## Visual System
+
+### Palette
+
+The palette should continue using:
+
+- ice white as the primary background
+- very light blue-gray for secondary surfaces
+- soft cool gray for separators and inputs
+- one restrained accent for primary actions
+- controlled status colors for sale and order states
+
+The palette should not drift toward:
+
+- generic SaaS blue-on-white
+- black-and-gold “luxury” clichés
+- heavy dark mode
+- warm marketing orange/red urgency
+
+### Surface Language
+
+Surfaces should feel quiet and expensive rather than busy.
+
+The system should prefer:
+
+- fewer card borders
+- softer separations
+- more space between blocks
+- stronger hierarchy in size, not decoration
+
+The system should avoid:
+
+- cards nested inside cards
+- too many pills and badges competing with the poster
+- dense explanatory text blocks
+- obvious “feature section” UI tropes
+
+### Poster Strategy
+
+Posters remain the main emotional layer. The product should frame them rather than compete with them.
+
+This means:
+
+- single-column large poster cards on the main discovery surface
+- clean metadata beneath or tightly associated with the poster
+- reduced auxiliary copy
+- clearer purchase action placement
+
+## Page Design
+
+### Home
+
+`Home` becomes the one real discovery page.
+
+It should combine the roles of the old `Home` and `Events` pages:
+
+- featured or hot-sale event flow
+- full discovery list behavior
+- small platform modules such as ranking and sale calendar
+
+The page should open directly into value:
+
+- no verbose hero paragraph
+- no self-explaining module descriptions
+- no duplicated “platform” narration
+
+The top area may still include a compact branded header or platform title, but it should feel like identity and orientation, not marketing copy.
+
+The core structure should be:
+
+- compact top header
+- poster-led main event stream
+- short ranking module
+- short sale-calendar module
+
+If both ranking and calendar remain, they should be compact and data-led.
+
+### Events
+
+The dedicated `Events` page should no longer present itself as a different product surface. It should either:
+
+- reuse the same discovery composition as `Home`, or
+- immediately transition into the same experience
+
+The app should not present two separate “browse events” tabs with slightly different descriptions.
+
+### Event Detail
+
+The event detail page should feel much more premium and much less talkative.
+
+The first screen should prioritize:
+
+- poster
+- title
+- time
+- venue
+- status
+- ticket tier or purchase entry
+
+The page should not start with explanatory copy about how the platform presents official ticket information.
+
+Secondary sections can remain:
+
+- sessions
+- ticket tiers
+- purchase notes
+- refund rules
+
+But they should be visually compressed and better separated through hierarchy instead of descriptive copy.
+
+### Checkout
+
+Checkout should remain calm, compact, and transactional.
+
+It should remove any text that narrates the obvious and instead rely on:
+
+- order summary
+- viewer summary
+- fee summary
+- clear payment action
+
+### Payment Result
+
+Payment result should feel concise and controlled.
+
+It should communicate only:
+
+- result state
+- what happens next
+- the primary next action
+
+No extra descriptive scaffolding is needed.
+
+### Orders
+
+Orders should feel like a high-trust ledger rather than a tutorial.
+
+The page should emphasize:
+
+- status filtering
+- event thumbnail/poster
+- key session and amount information
+- state-aware actions
+
+Explanatory text around order states should be removed unless it directly affects a decision.
+
+### Order Detail
+
+Order detail should feel precise and minimal.
+
+It should emphasize:
+
+- current order state
+- event and ticket information
+- payment and fulfillment facts
+- refund entry or after-sales status
+
+It should not contain headings or descriptions that explain what order detail is for.
+
+### Me
+
+`Me` should become a quiet tools page, not an explanation-heavy dashboard.
+
+It should include:
+
+- compact personal summary
+- direct entry tools
+- policy and support links
+
+It should remove:
+
+- narrative copy about how the account center works
+- descriptions under each tool entry unless absolutely necessary
+
+### Viewers And After-Sales
+
+These pages should also follow the same copy-reduction discipline:
+
+- stronger field grouping
+- cleaner labels
+- less helper narration
+- only the rule or warning copy required to avoid user mistakes
+
+## Motion
+
+Motion should stay subtle and premium:
+
+- fade and rise on initial page content
+- soft state transitions
+- calm sticky-bar transitions
+
+Motion should not be used as compensation for weak layout.
+
+## Component Rules
+
+The shared miniapp component layer should be updated to support the new direction:
+
+- `PageHero` should support title-only or title-plus-compact-meta modes
+- `SectionHeading` should support title-only mode cleanly
+- `AppBottomNav` should become simpler and remove descriptive subtitles
+- `PosterEventCard` should reduce description dependence
+- empty states should support title-only or title-plus-action patterns
 
 ## Implementation Guidance
 
-### Production UI Delivery Model
+### Scope
 
-The production miniapp UI will be delivered in the existing `apps/miniapp` Taro codebase, not as HTML slide output.
+This is a long task because it changes both structure and style:
 
-The workflow is:
+- information architecture
+- navigation
+- typography
+- copy density
+- page composition
 
-1. use `frontend-slides` to generate a small number of high-fidelity visual references for alignment
-2. extract the approved visual rules into miniapp design tokens and reusable page patterns
-3. implement reusable Taro components for cards, shells, filters, sticky actions, and state views
-4. recompose the existing pages around those components while preserving the business flow
+The work should be phased, but the system direction must stay consistent.
 
-This keeps the redesign practical:
+### Non-Goals
 
-- `frontend-slides` helps us decide what the product should look like
-- Taro components are how the real miniapp ships
+This phase does not change:
 
-### Recommended Build Order
+- backend contracts
+- checkout rules
+- payment logic
+- refund logic
 
-1. establish global tokens, spacing rules, surfaces, and button patterns
-2. build the core event card and status chip components
-3. redesign Home, Events, and Event Detail
-4. redesign Checkout, Payment Result, Orders, and Order Detail
-5. redesign Me, Viewers, and After-Sales
-6. align empty, loading, and failure states
+The change is primarily in how the product is structured and presented.
 
-### Visual Exploration Workflow
+## Testing And Verification
 
-Before implementation, `frontend-slides` can be used to generate HTML visual explorations for:
+The redesign must be verified through:
 
-- homepage directions
-- event card system
-- event detail first-screen layouts
+- miniapp build success
+- existing miniapp tests
+- visual smoke checks in WeChat DevTools
+- navigation verification after removing `Events` from the main tab model
+- full review of pages for leftover explanatory copy
 
-Those artifacts should be treated as alignment tools and references. The final shipping UI should be implemented in Taro-native page and component code.
+## Final Summary
 
-### UI System Build Strategy
+The approved target is a quieter, more premium, more official miniapp with:
 
-The miniapp redesign should introduce a proper presentation layer instead of continuing with page-local inline styles.
+- one real discovery surface instead of duplicated `Home` and `Events`
+- a simplified `Home / Orders / Me` navigation model
+- near-total removal of explanatory filler copy
+- a more intentional typography system
+- more trust and more visual restraint
+- stronger poster-first discovery
 
-The expected structure is:
-
-- shared design tokens for color, spacing, radius, elevation, and motion timing
-- shared layout shells for page scaffolding and section rhythm
-- reusable domain components such as poster event cards, status chips, filter bars, sticky purchase bars, order cards, and state placeholders
-- page rewrites that swap the current ad hoc presentation for the new system without changing core purchase and order logic
-
-The implementation should favor:
-
-- preserving the existing request and navigation flow
-- moving styling into reusable components and shared style files
-- incremental rollout by purchase-critical page groups
-
-The implementation should avoid:
-
-- mixing experimental HTML-only mockup code into the miniapp runtime
-- redesigning every page independently with unique styles
-- coupling the visual revamp to backend contract changes
-
-## Testing And Verification Expectations
-
-The redesign should include:
-
-- page-level verification in WeChat DevTools
-- responsive checks across common miniapp viewport sizes
-- verification that the purchase flow remains intact
-- regression checks for state-driven order and payment views
-- shared component consistency checks where feasible
-
-## Risks
-
-### Risk: Too Cold Or Too Corporate
-
-A light official palette can drift into generic finance-product UI. Large posters and careful motion are the main counterbalance.
-
-### Risk: Too Decorative
-
-Trying to reintroduce “concert atmosphere” too aggressively can make the platform feel promotional instead of trustworthy. Decorative effects should remain secondary to clarity.
-
-### Risk: Inconsistent Rollout
-
-If pages are restyled individually without shared components and tokens, the app will still feel like a demo. The redesign must be system-first.
-
-## Final Direction Summary
-
-The approved target is a `high-efficiency official ticketing platform` miniapp with:
-
-- light premium surfaces
-- ice-white and blue-gray foundation
-- large poster-led single-column event cards
-- strong purchase clarity
-- operational homepage modules
-- calm premium motion
-- tool-oriented support and account pages
-
-This should produce a miniapp that feels suitable for real concert ticketing operations, not just feature demonstration.
+The result should feel like a credible official ticketing product, not a well-styled demo.

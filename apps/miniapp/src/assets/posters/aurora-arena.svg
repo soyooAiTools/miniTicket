@@ -1,0 +1,28 @@
+<svg width="1080" height="1440" viewBox="0 0 1080 1440" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="aurora-bg" x1="120" y1="80" x2="960" y2="1320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#091A3D"/>
+      <stop offset="0.42" stop-color="#173A74"/>
+      <stop offset="1" stop-color="#EDF4FF"/>
+    </linearGradient>
+    <radialGradient id="aurora-light" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(542 352) rotate(90) scale(438 454)">
+      <stop stop-color="#F5FBFF"/>
+      <stop offset="0.58" stop-color="#B6D8FF" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#B6D8FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="aurora-beam" x1="192" y1="154" x2="642" y2="1120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E8F6FF" stop-opacity="0.86"/>
+      <stop offset="1" stop-color="#E8F6FF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#aurora-bg)"/>
+  <rect x="-138" y="-36" width="1356" height="526" fill="url(#aurora-light)"/>
+  <path d="M124 108L434 1080H640L310 108H124Z" fill="url(#aurora-beam)"/>
+  <path d="M936 144L638 1080H834L1042 144H936Z" fill="url(#aurora-beam)" opacity="0.72"/>
+  <path d="M0 1002C186 954 344 930 542 930C740 930 896 960 1080 1008V1440H0V1002Z" fill="#0B1C3D" fill-opacity="0.88"/>
+  <path d="M104 1038C232 1002 390 978 540 978C690 978 848 1002 976 1038V1440H104V1038Z" fill="#15305F"/>
+  <path d="M0 1186C194 1146 350 1122 540 1122C730 1122 886 1146 1080 1186V1440H0V1186Z" fill="#08142F"/>
+  <circle cx="286" cy="258" r="10" fill="#F9FDFF" fill-opacity="0.92"/>
+  <circle cx="802" cy="218" r="8" fill="#F9FDFF" fill-opacity="0.72"/>
+  <circle cx="864" cy="314" r="6" fill="#F9FDFF" fill-opacity="0.62"/>
+</svg>

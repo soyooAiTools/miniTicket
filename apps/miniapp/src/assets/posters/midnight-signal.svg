@@ -1,0 +1,27 @@
+<svg width="1080" height="1440" viewBox="0 0 1080 1440" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="midnight-bg" x1="540" y1="0" x2="540" y2="1440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#090C17"/>
+      <stop offset="0.48" stop-color="#241A42"/>
+      <stop offset="1" stop-color="#F0F2FF"/>
+    </linearGradient>
+    <radialGradient id="midnight-halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(538 302) rotate(90) scale(300 334)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#D9D8FF" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#D9D8FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="midnight-stage" x1="180" y1="950" x2="910" y2="1320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1D1A37"/>
+      <stop offset="1" stop-color="#0B0F20"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#midnight-bg)"/>
+  <circle cx="540" cy="302" r="300" fill="url(#midnight-halo)"/>
+  <path d="M172 76L392 1042H502L286 76H172Z" fill="#E9E7FF" fill-opacity="0.5"/>
+  <path d="M906 76L676 1042H788L1018 76H906Z" fill="#E9E7FF" fill-opacity="0.42"/>
+  <path d="M0 1022L196 936H884L1080 1022V1440H0V1022Z" fill="url(#midnight-stage)"/>
+  <path d="M214 956H866L782 1440H298L214 956Z" fill="#131A2E"/>
+  <rect x="320" y="1034" width="440" height="26" rx="13" fill="#C9C7FF" fill-opacity="0.46"/>
+  <rect x="288" y="1086" width="504" height="16" rx="8" fill="#C9C7FF" fill-opacity="0.36"/>
+  <rect x="250" y="1132" width="580" height="14" rx="7" fill="#C9C7FF" fill-opacity="0.24"/>
+</svg>

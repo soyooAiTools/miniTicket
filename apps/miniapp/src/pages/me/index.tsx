@@ -16,12 +16,18 @@ import {
 import { request } from '../../services/request';
 import { formatCompactDateTime } from '../../ui/formatters';
 import { buildOrderDashboard } from '../../ui/order-presenters';
+import { getShowcaseOrders, shouldUseShowcaseContent } from '../../ui/showcase-data';
 import { getOrderStatusMeta } from '../../ui/status';
 
 export default function MePage() {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
 
   const loadOrders = async () => {
+    if (shouldUseShowcaseContent()) {
+      setOrders(getShowcaseOrders());
+      return;
+    }
+
     try {
       const response = await request<{ items?: OrderListItem[] }>({
         url: '/orders/my',
@@ -45,23 +51,9 @@ export default function MePage() {
 
   return (
     <PageShell>
-      <PageHero
-        description='把观演人、订单、购票须知和隐私政策聚合成一个高效工具面板。'
-        eyebrow='Me'
-        title='我的'
-      >
-        <View className='pill-row'>
-          <View className='pill-row__item'>{dashboard.totalOrders} 笔订单</View>
-          <View className='pill-row__item'>{dashboard.pendingActionCount} 笔待处理</View>
-        </View>
-      </PageHero>
+      <PageHero title='我的' />
 
       <SurfaceCard>
-        <SectionHeading
-          description='个人中心不做社区感，而是优先服务购票后的高频操作。'
-          eyebrow='Overview'
-          title='账号概览'
-        />
         <View className='summary-grid'>
           <View className='summary-grid__item'>
             <Text className='summary-grid__label'>最近订单</Text>
@@ -70,7 +62,7 @@ export default function MePage() {
             </Text>
           </View>
           <View className='summary-grid__item'>
-            <Text className='summary-grid__label'>可售后订单</Text>
+            <Text className='summary-grid__label'>可售后</Text>
             <Text className='summary-grid__value'>{dashboard.openAfterSalesCount}</Text>
           </View>
           <View className='summary-grid__item'>
@@ -81,49 +73,37 @@ export default function MePage() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          description='高频入口固定在第一屏即可触达。'
-          eyebrow='Tools'
-          title='常用工具'
-        />
+        <SectionHeading title='常用入口' />
         <View className='toolbar-grid'>
           <View
             className='toolbar-grid__item'
             onClick={() => Taro.navigateTo({ url: '/pages/viewers/index' })}
           >
-            <Text className='toolbar-grid__title'>观演人管理</Text>
-            <Text className='toolbar-grid__description'>维护实名观演人资料</Text>
+            <Text className='toolbar-grid__title'>观演人</Text>
           </View>
           <View
             className='toolbar-grid__item'
             onClick={() => Taro.reLaunch({ url: '/pages/orders/index' })}
           >
-            <Text className='toolbar-grid__title'>我的订单</Text>
-            <Text className='toolbar-grid__description'>查看支付、出票和售后状态</Text>
+            <Text className='toolbar-grid__title'>订单</Text>
           </View>
           <View
             className='toolbar-grid__item'
             onClick={() => Taro.navigateTo({ url: '/pages/policies/purchase/index' })}
           >
-            <Text className='toolbar-grid__title'>购票须知</Text>
-            <Text className='toolbar-grid__description'>查看实名、退款和出票规则</Text>
+            <Text className='toolbar-grid__title'>购票规则</Text>
           </View>
           <View
             className='toolbar-grid__item'
             onClick={() => Taro.navigateTo({ url: '/pages/policies/privacy/index' })}
           >
             <Text className='toolbar-grid__title'>隐私政策</Text>
-            <Text className='toolbar-grid__description'>了解信息使用与授权范围</Text>
           </View>
         </View>
       </SurfaceCard>
 
       <SurfaceCard muted>
-        <SectionHeading
-          description='最近一笔订单放在个人中心，方便用户快速回到履约状态。'
-          eyebrow='Latest order'
-          title='最近订单'
-        />
+        <SectionHeading title='最近订单' />
         {latestOrder ? (
           <>
             <View className='stack-header'>
@@ -144,15 +124,12 @@ export default function MePage() {
                   })
                 }
               >
-                查看最近订单
+                查看详情
               </PrimaryButton>
             </View>
           </>
         ) : (
-          <EmptyState
-            description='完成首次下单后，这里会展示最近订单和处理入口。'
-            title='还没有订单记录'
-          />
+          <EmptyState title='暂无订单' />
         )}
       </SurfaceCard>
 

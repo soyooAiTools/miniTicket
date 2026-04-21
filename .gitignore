@@ -18,3 +18,5 @@ package-lock.json
 .codex_tmp_openai_skills.zip
 .superpowers/brainstorm/
 .worktrees/
+.impeccable.md
+apps/miniapp/project.private.config.json

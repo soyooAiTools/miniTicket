@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn the current miniapp from a functional demo into a polished, high-efficiency official ticketing platform UI without changing the core purchase and order flows.
+**Goal:** Turn the current miniapp into a more premium official ticketing product by merging the duplicated discovery surfaces, removing explanatory filler copy, and upgrading typography and page hierarchy without changing core business flows.
 
-**Architecture:** Keep the current Taro miniapp business logic and API integration, but introduce a proper presentation layer made of shared design tokens, reusable UI components, page-level layout shells, and pure helper modules for status and formatting. Use `frontend-slides` only for visual reference, then ship the real UI in `apps/miniapp`.
+**Architecture:** Keep the current Taro miniapp logic and API integration, but reshape the presentation layer around a stricter design system. The main changes are structural and visual: collapse `Home` and `Events` into one discovery model, simplify bottom navigation, update shared UI primitives so they can render with minimal copy, and then rewrite the major pages against those primitives.
 
 **Tech Stack:** Taro 4, React 18, TypeScript, Vitest, WeChat miniapp runtime, existing shared contracts
 
@@ -12,368 +12,337 @@
 
 ## Proposed File Structure
 
-- `apps/miniapp/src/app.tsx`
-  Responsibility: load shared global theme styles once.
-- `apps/miniapp/src/styles/theme.css`
-  Responsibility: define app-wide color, spacing, radius, shadow, and motion tokens plus base utility classes.
-- `apps/miniapp/src/ui/formatters.ts`
-  Responsibility: centralize date, price, and text formatting for event and order surfaces.
-- `apps/miniapp/src/ui/status.ts`
-  Responsibility: map sale status, order status, and ticket type to user-facing labels and style variants.
-- `apps/miniapp/src/ui/home-sections.ts`
-  Responsibility: build homepage ranking and sale-calendar slices from event data.
-- `apps/miniapp/src/ui/*.spec.ts`
-  Responsibility: verify formatter and status behavior before UI composition.
-- `apps/miniapp/src/components/ui/PageShell.tsx`
-  Responsibility: provide the light premium page scaffold and section rhythm.
-- `apps/miniapp/src/components/ui/PageHero.tsx`
-  Responsibility: render page title, supporting copy, and optional quick actions.
-- `apps/miniapp/src/components/ui/SurfaceCard.tsx`
-  Responsibility: render the shared quiet card surface.
-- `apps/miniapp/src/components/ui/StatusChip.tsx`
-  Responsibility: render reusable state tags.
-- `apps/miniapp/src/components/ui/PosterEventCard.tsx`
-  Responsibility: render the poster-led event card used across homepage, events, and order/event surfaces.
-- `apps/miniapp/src/components/ui/SectionHeading.tsx`
-  Responsibility: standardize section label, title, and trailing actions.
-- `apps/miniapp/src/components/ui/PrimaryButton.tsx`
-  Responsibility: standardize primary and secondary button appearance.
-- `apps/miniapp/src/components/ui/EmptyState.tsx`
-  Responsibility: standardize empty and loading-friendly placeholders.
-- `apps/miniapp/src/components/ui/StickyActionBar.tsx`
-  Responsibility: standardize sticky bottom action areas on action-driven pages.
-- `apps/miniapp/src/pages/home/index.tsx`
-  Responsibility: platform homepage with hot sale, upcoming, ranking, and sale calendar.
-- `apps/miniapp/src/pages/events/index.tsx`
-  Responsibility: full event discovery page with list rhythm and quick filters.
-- `apps/miniapp/src/pages/event-detail/index.tsx`
-  Responsibility: poster-first event detail with sessions, tiers, and purchase-first structure.
-- `apps/miniapp/src/pages/orders/index.tsx`
-  Responsibility: status-led order center.
-- `apps/miniapp/src/pages/order-detail/index.tsx`
-  Responsibility: trust-first order detail page.
-- `apps/miniapp/src/pages/payment-result/index.tsx`
-  Responsibility: clear three-state payment result feedback.
-- `apps/miniapp/src/pages/me/index.tsx`
-  Responsibility: high-efficiency tools dashboard.
-- `apps/miniapp/src/pages/viewers/index.tsx`
-  Responsibility: viewer list management surface.
-- `apps/miniapp/src/pages/viewers/form.tsx`
-  Responsibility: viewer create form with clearer field grouping and guidance.
-- `apps/miniapp/src/pages/after-sales/index.tsx`
-  Responsibility: procedural after-sales request page.
-- `apps/miniapp/src/app.config.ts`
-  Responsibility: register any new asset references and optional tab/navigation updates.
+- `D:/miniTicket/.impeccable.md`
+  Responsibility: persist the approved design context so future UI work keeps the same brand direction.
+- `D:/miniTicket/docs/superpowers/specs/2026-04-21-ticketing-miniapp-ui-revamp-design.md`
+  Responsibility: record the approved structure, typography, and copy rules.
+- `D:/miniTicket/apps/miniapp/src/app.config.ts`
+  Responsibility: page registration and the long-term handling of the `events` route.
+- `D:/miniTicket/apps/miniapp/src/ui/navigation.ts`
+  Responsibility: the bottom-nav model and route map.
+- `D:/miniTicket/apps/miniapp/src/ui/navigation.spec.ts`
+  Responsibility: prevent regressions in the simplified tab structure.
+- `D:/miniTicket/apps/miniapp/src/styles/theme.css`
+  Responsibility: global tokens for spacing, surfaces, and upgraded typography hierarchy.
+- `D:/miniTicket/apps/miniapp/src/components/ui/AppBottomNav.tsx`
+  Responsibility: simplified tab bar without descriptive subtitles.
+- `D:/miniTicket/apps/miniapp/src/components/ui/PageHero.tsx`
+  Responsibility: title-first hero with optional compact meta, not narrative copy.
+- `D:/miniTicket/apps/miniapp/src/components/ui/SectionHeading.tsx`
+  Responsibility: compact section headers that work without description text.
+- `D:/miniTicket/apps/miniapp/src/components/ui/PosterEventCard.tsx`
+  Responsibility: poster-led card that does not depend on body description text.
+- `D:/miniTicket/apps/miniapp/src/components/ui/EmptyState.tsx`
+  Responsibility: minimal placeholder patterns that can render title-only states.
+- `D:/miniTicket/apps/miniapp/src/pages/home/index.tsx`
+  Responsibility: the single primary discovery surface.
+- `D:/miniTicket/apps/miniapp/src/pages/events/index.tsx`
+  Responsibility: compatibility route that reuses or redirects to the unified discovery surface.
+- `D:/miniTicket/apps/miniapp/src/pages/event-detail/index.tsx`
+  Responsibility: purchase-first detail page with lower copy density.
+- `D:/miniTicket/apps/miniapp/src/pages/orders/index.tsx`
+  Responsibility: trust-first order list without redundant explanations.
+- `D:/miniTicket/apps/miniapp/src/pages/order-detail/index.tsx`
+  Responsibility: compact order fact surface.
+- `D:/miniTicket/apps/miniapp/src/pages/me/index.tsx`
+  Responsibility: quiet tools page with minimal text.
+- `D:/miniTicket/apps/miniapp/src/pages/viewers/index.tsx`
+  Responsibility: viewer management list with reduced helper text.
+- `D:/miniTicket/apps/miniapp/src/pages/viewers/form.tsx`
+  Responsibility: grouped viewer form with only essential guidance.
+- `D:/miniTicket/apps/miniapp/src/pages/after-sales/index.tsx`
+  Responsibility: procedural service page with only decision-relevant copy.
 
-## Task 1: Establish UI Helpers With Tests
+## Task 1: Lock Navigation And Typography Foundations
 
 **Files:**
-- Create: `apps/miniapp/src/ui/formatters.ts`
-- Create: `apps/miniapp/src/ui/status.ts`
-- Create: `apps/miniapp/src/ui/home-sections.ts`
-- Create: `apps/miniapp/src/ui/formatters.spec.ts`
-- Create: `apps/miniapp/src/ui/status.spec.ts`
-- Create: `apps/miniapp/src/ui/home-sections.spec.ts`
+- Modify: `D:/miniTicket/apps/miniapp/src/ui/navigation.ts`
+- Modify: `D:/miniTicket/apps/miniapp/src/ui/navigation.spec.ts`
+- Modify: `D:/miniTicket/apps/miniapp/src/styles/theme.css`
+- Modify: `D:/miniTicket/apps/miniapp/src/components/ui/AppBottomNav.tsx`
 
-- [ ] **Step 1: Write the failing formatter tests**
+- [ ] **Step 1: Write or update failing navigation tests**
 
 ```ts
-// apps/miniapp/src/ui/formatters.spec.ts
 import { describe, expect, it } from 'vitest';
 
-import {
-  formatCompactDate,
-  formatCurrencyCny,
-  formatSaleWindow,
-} from './formatters';
+import { buildAppNavigation } from './navigation';
 
-describe('formatters', () => {
-  it('formats integer price as cny label', () => {
-    expect(formatCurrencyCny(399)).toBe('399 RMB');
-  });
-
-  it('formats iso time into compact date copy', () => {
-    expect(formatCompactDate('2026-05-01T19:30:00.000Z')).toContain('2026');
-  });
-
-  it('builds sale window copy when both start and end exist', () => {
-    expect(
-      formatSaleWindow('2026-05-01T10:00:00.000Z', '2026-05-02T18:00:00.000Z'),
-    ).toContain('2026');
+describe('buildAppNavigation', () => {
+  it('keeps only home, orders, and me as primary tabs', () => {
+    expect(buildAppNavigation('home').map((item) => item.key)).toEqual([
+      'home',
+      'orders',
+      'me',
+    ]);
   });
 });
 ```
 
-- [ ] **Step 2: Write the failing status tests**
+- [ ] **Step 2: Run the navigation tests to verify failure**
+
+Run: `corepack pnpm --filter miniapp test -- src/ui/navigation.spec.ts`
+Expected: FAIL because the current nav still includes `events`.
+
+- [ ] **Step 3: Update navigation model and bottom-nav rendering**
 
 ```ts
-// apps/miniapp/src/ui/status.spec.ts
-import { describe, expect, it } from 'vitest';
+export type AppNavKey = 'home' | 'orders' | 'me';
 
-import { getOrderStatusMeta, getSaleStatusMeta } from './status';
-
-describe('status meta', () => {
-  it('maps on-sale status to a highlighted meta object', () => {
-    expect(getSaleStatusMeta('ON_SALE')).toMatchObject({
-      tone: 'accent',
-      label: 'On sale',
-    });
-  });
-
-  it('maps pending fulfillment orders to trust-oriented copy', () => {
-    expect(getOrderStatusMeta('PAID_PENDING_FULFILLMENT')).toMatchObject({
-      tone: 'info',
-      label: 'Pending fulfillment',
-    });
-  });
-});
+const APP_NAVIGATION_ITEMS = [
+  { key: 'home', label: 'Home', url: '/pages/home/index' },
+  { key: 'orders', label: 'Orders', url: '/pages/orders/index' },
+  { key: 'me', label: 'Me', url: '/pages/me/index' },
+];
 ```
-
-- [ ] **Step 3: Write the failing homepage section tests**
-
-```ts
-// apps/miniapp/src/ui/home-sections.spec.ts
-import { describe, expect, it } from 'vitest';
-
-import { buildHomeCollections } from './home-sections';
-
-describe('buildHomeCollections', () => {
-  it('splits events into hot sale and upcoming sections', () => {
-    const result = buildHomeCollections([
-      { id: '1', minPrice: 399, saleStatus: 'ON_SALE', title: 'A' },
-      { id: '2', minPrice: 299, saleStatus: 'UPCOMING', title: 'B' },
-    ] as never[]);
-
-    expect(result.hotSale).toHaveLength(1);
-    expect(result.upcoming).toHaveLength(1);
-  });
-});
-```
-
-- [ ] **Step 4: Run the helper tests to verify they fail**
-
-Run: `corepack pnpm --filter miniapp test -- src/ui`
-
-Expected: FAIL because the helper modules do not exist yet.
-
-- [ ] **Step 5: Implement the helper modules**
-
-```ts
-// apps/miniapp/src/ui/status.ts
-import type { OrderStatus, SaleStatus } from '../../../../../packages/contracts/src';
-
-export type StatusMeta = {
-  label: string;
-  tone: 'neutral' | 'accent' | 'info' | 'success' | 'warning' | 'danger';
-};
-
-export function getSaleStatusMeta(status: SaleStatus): StatusMeta {
-  if (status === 'ON_SALE') return { label: 'On sale', tone: 'accent' };
-  if (status === 'UPCOMING') return { label: 'Coming soon', tone: 'info' };
-  return { label: 'Sold out', tone: 'neutral' };
-}
-```
-
-```ts
-// apps/miniapp/src/ui/formatters.ts
-export function formatCurrencyCny(value: number) {
-  return `${value} RMB`;
-}
-```
-
-- [ ] **Step 6: Run the helper tests to verify they pass**
-
-Run: `corepack pnpm --filter miniapp test -- src/ui`
-
-Expected: PASS for the new helper tests.
-
-## Task 2: Build The Shared Miniapp UI System
-
-**Files:**
-- Modify: `apps/miniapp/src/app.tsx`
-- Create: `apps/miniapp/src/styles/theme.css`
-- Create: `apps/miniapp/src/components/ui/PageShell.tsx`
-- Create: `apps/miniapp/src/components/ui/PageHero.tsx`
-- Create: `apps/miniapp/src/components/ui/SurfaceCard.tsx`
-- Create: `apps/miniapp/src/components/ui/SectionHeading.tsx`
-- Create: `apps/miniapp/src/components/ui/StatusChip.tsx`
-- Create: `apps/miniapp/src/components/ui/PosterEventCard.tsx`
-- Create: `apps/miniapp/src/components/ui/PrimaryButton.tsx`
-- Create: `apps/miniapp/src/components/ui/EmptyState.tsx`
-- Create: `apps/miniapp/src/components/ui/StickyActionBar.tsx`
-
-- [ ] **Step 1: Load a global theme stylesheet in the app entry**
 
 ```tsx
-// apps/miniapp/src/app.tsx
-import './styles/theme.css';
+<Text className='app-nav__label'>{item.label}</Text>
 ```
 
-- [ ] **Step 2: Define the shared design tokens and base classes**
+- [ ] **Step 4: Upgrade typography tokens in the theme**
 
 ```css
-/* apps/miniapp/src/styles/theme.css */
 :root {
-  --bg-page: #f4f8fc;
-  --bg-surface: rgba(255, 255, 255, 0.88);
-  --text-strong: #0f1728;
-  --text-muted: #64748b;
-  --line-soft: rgba(148, 163, 184, 0.18);
-  --accent: #274b7a;
-  --accent-soft: #e3eefc;
-  --radius-xl: 28px;
-  --radius-lg: 22px;
-  --shadow-soft: 0 18px 48px rgba(102, 132, 173, 0.12);
+  --font-display: "Baskerville", "Times New Roman", "Songti SC", "STSong", serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+.page-hero__title,
+.section-heading__title,
+.poster-card__overlay-title {
+  font-family: var(--font-display);
+}
+
+.app-shell,
+.detail-list__value,
+.calendar-item__meta {
+  font-family: var(--font-ui);
 }
 ```
 
-- [ ] **Step 3: Add the shared shell, card, chip, and poster components**
+- [ ] **Step 5: Run the navigation tests again**
 
-```tsx
-// apps/miniapp/src/components/ui/PageShell.tsx
-import { View } from '@tarojs/components';
-
-export function PageShell({ children }: { children: React.ReactNode }) {
-  return <View className='app-shell'>{children}</View>;
-}
-```
-
-- [ ] **Step 4: Build the miniapp to verify the shared layer compiles**
-
-Run: `corepack pnpm --filter miniapp build:weapp`
-
+Run: `corepack pnpm --filter miniapp test -- src/ui/navigation.spec.ts`
 Expected: PASS.
 
-## Task 3: Redesign Home, Events, And Event Detail
+## Task 2: Make Shared UI Primitives Work Without Narrative Copy
 
 **Files:**
-- Modify: `apps/miniapp/src/pages/home/index.tsx`
-- Modify: `apps/miniapp/src/pages/events/index.tsx`
-- Modify: `apps/miniapp/src/pages/event-detail/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/components/ui/PageHero.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/components/ui/SectionHeading.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/components/ui/PosterEventCard.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/components/ui/EmptyState.tsx`
 
-- [ ] **Step 1: Move Home to the new platform structure**
+- [ ] **Step 1: Write a failing test for title-only section rendering where practical**
 
-```tsx
-// apps/miniapp/src/pages/home/index.tsx
-// render:
-// - search/city hero
-// - hot sale cards
-// - upcoming sale section
-// - hot ranking
-// - sale calendar
+```ts
+import { renderToString } from 'react-dom/server';
+import { expect, it } from 'vitest';
+
+import { SectionHeading } from '../components/ui/SectionHeading';
+
+it('renders cleanly without description text', () => {
+  const html = renderToString(<SectionHeading title='Top picks' />);
+  expect(html).toContain('Top picks');
+});
 ```
 
-- [ ] **Step 2: Move Events to the new single-column discovery flow**
+- [ ] **Step 2: Run the relevant miniapp tests**
+
+Run: `corepack pnpm --filter miniapp test`
+Expected: FAIL if any component still assumes descriptive copy is always present.
+
+- [ ] **Step 3: Refactor the shared components to title-first behavior**
 
 ```tsx
-// apps/miniapp/src/pages/events/index.tsx
-// render:
-// - quick filter row
-// - poster-led event list
-// - clearer metadata than homepage
+type PageHeroProps = {
+  title: string;
+  eyebrow?: string;
+  meta?: ReactNode;
+  children?: ReactNode;
+};
 ```
-
-- [ ] **Step 3: Move Event Detail to a purchase-first layout**
 
 ```tsx
-// apps/miniapp/src/pages/event-detail/index.tsx
-// render:
-// - poster hero
-// - time / venue / state
-// - session and tier cards
-// - intro and rules sections
-// - sticky purchase action
+type SectionHeadingProps = {
+  title: string;
+  eyebrow?: string;
+  trailing?: ReactNode;
+};
 ```
 
-- [ ] **Step 4: Build the miniapp to verify the three pages compile**
+```tsx
+type EmptyStateProps = {
+  title: string;
+  action?: ReactNode;
+};
+```
 
-Run: `corepack pnpm --filter miniapp build:weapp`
+- [ ] **Step 4: Re-run miniapp tests**
 
+Run: `corepack pnpm --filter miniapp test`
 Expected: PASS.
 
-## Task 4: Redesign Orders, Order Detail, And Payment Result
+## Task 3: Merge Home And Events Into One Discovery Model
 
 **Files:**
-- Modify: `apps/miniapp/src/pages/orders/index.tsx`
-- Modify: `apps/miniapp/src/pages/order-detail/index.tsx`
-- Modify: `apps/miniapp/src/pages/payment-result/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/home/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/events/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/app.config.ts`
 
-- [ ] **Step 1: Reshape Orders into a status-led center**
-- [ ] **Step 2: Reshape Order Detail into a trust-first detail surface**
-- [ ] **Step 3: Reshape Payment Result into clear three-state feedback**
+- [ ] **Step 1: Rewrite `home` as the only real discovery surface**
+
+Implementation requirements:
+- keep the large poster-led list
+- remove hero description copy
+- keep ranking and sale calendar only if they stay compact
+- remove the quick-access block that exists only to explain navigation
+
+- [ ] **Step 2: Make `events` a compatibility route**
+
+Implementation requirement:
+- either render the same discovery composition as `home`
+- or immediately redirect/relaunch to `/pages/home/index`
+
+- [ ] **Step 3: Keep route registration intact while removing product duplication**
+
+```ts
+pages: [
+  'pages/home/index',
+  'pages/events/index',
+  // ...
+]
+```
+
+The route may stay registered, but it must stop behaving like a separate first-class destination.
+
 - [ ] **Step 4: Build the miniapp**
 
 Run: `corepack pnpm --filter miniapp build:weapp`
-
 Expected: PASS.
 
-## Task 5: Redesign Me, Viewers, Viewer Form, And After-Sales
+## Task 4: Remove Explanatory Copy Across Core Pages
 
 **Files:**
-- Modify: `apps/miniapp/src/pages/me/index.tsx`
-- Modify: `apps/miniapp/src/pages/viewers/index.tsx`
-- Modify: `apps/miniapp/src/pages/viewers/form.tsx`
-- Modify: `apps/miniapp/src/pages/after-sales/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/event-detail/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/orders/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/order-detail/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/me/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/viewers/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/viewers/form.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/after-sales/index.tsx`
 
-- [ ] **Step 1: Turn Me into a tool-oriented dashboard**
-- [ ] **Step 2: Move Viewers list to card-based management**
-- [ ] **Step 3: Move Viewer Form to grouped field sections**
-- [ ] **Step 4: Move After-Sales to a procedural service page**
-- [ ] **Step 5: Build the miniapp**
+- [ ] **Step 1: Audit and remove narrative copy**
+
+Remove patterns such as:
+- “this page helps…”
+- “here you can…”
+- repeated descriptions under section titles
+- tool-card helper paragraphs that restate obvious destinations
+
+- [ ] **Step 2: Replace deleted text with stronger hierarchy where needed**
+
+Examples:
+- stronger section spacing
+- better metadata grouping
+- clearer state chip placement
+- tighter button placement
+
+- [ ] **Step 3: Preserve rule text only where it is required for decisions**
+
+Allowed examples:
+- refund rules
+- real-name ticketing warnings
+- payment or order state results
+
+- [ ] **Step 4: Run the miniapp build again**
 
 Run: `corepack pnpm --filter miniapp build:weapp`
-
 Expected: PASS.
 
-## Task 6: Final Verification
+## Task 5: Tighten High-Trust Visual Quality On Key Pages
+
+**Files:**
+- Modify: `D:/miniTicket/apps/miniapp/src/styles/theme.css`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/home/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/event-detail/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/orders/index.tsx`
+- Modify: `D:/miniTicket/apps/miniapp/src/pages/order-detail/index.tsx`
+
+- [ ] **Step 1: Increase title/body contrast**
+
+Implementation requirements:
+- larger gap between display titles and body text
+- shorter line lengths for large titles
+- calmer body text color
+
+- [ ] **Step 2: Reduce “demo card” feeling**
+
+Implementation requirements:
+- fewer visual dividers
+- less repeated small text
+- more whitespace around high-value content blocks
+
+- [ ] **Step 3: Make order and detail pages feel more ledger-like**
+
+Implementation requirements:
+- emphasize state, amount, and ticket facts
+- reduce descriptive scaffolding
+- keep sticky actions compact
+
+- [ ] **Step 4: Run lint and tests**
+
+Run: `corepack pnpm lint`
+Expected: PASS.
+
+Run: `corepack pnpm test`
+Expected: PASS.
+
+## Task 6: Final DevTools Verification
 
 **Files:**
 - Verify only
 
-- [ ] **Step 1: Run miniapp tests**
+- [ ] **Step 1: Start or confirm local API health**
 
-Run: `corepack pnpm --filter miniapp test`
+Run: `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:3100/api/health`
+Expected: `{"status":"ok","service":"authorized-ticketing-api"}`
 
-Expected: PASS.
+- [ ] **Step 2: Start miniapp watch build**
 
-- [ ] **Step 2: Run workspace lint**
+Run: `corepack pnpm --filter miniapp dev:weapp`
+Expected: watch compilation succeeds.
 
-Run: `corepack pnpm lint`
-
-Expected: PASS.
-
-- [ ] **Step 3: Run the miniapp production build**
-
-Run: `corepack pnpm --filter miniapp build:weapp`
-
-Expected: PASS.
-
-- [ ] **Step 4: Run a devtools smoke check**
+- [ ] **Step 3: Review the app in WeChat DevTools**
 
 Expected review points:
-- homepage renders with the new light premium system
-- events page renders poster-led list
-- event detail first screen is purchase-first
-- orders and me pages no longer read like demo screens
+- homepage is now the single clear discovery surface
+- bottom nav shows only `Home / Orders / Me`
+- the app no longer uses narrative descriptive paragraphs
+- typography feels more premium and deliberate
+- event detail and order detail read cleanly at a glance
 
 ## Plan Self-Review
 
 ### Spec Coverage
 
-- high-efficiency platform direction: covered in Tasks 2-5
-- light premium visual system: covered in Task 2
-- poster-led cards and key page redesigns: covered in Tasks 3-5
-- motion/status/formatting consistency: covered in Tasks 1-2
-- preserving business flow: reflected in page modifications rather than API changes
+- merged discovery architecture: covered by Task 3
+- copy reduction across the app: covered by Task 4
+- typography and premium feel: covered by Tasks 1 and 5
+- simplified navigation: covered by Task 1
+- page-level verification: covered by Task 6
 
 ### Placeholder Scan
 
 - no `TODO` or `TBD` markers remain
-- each task names exact files and verification commands
-- implementation order follows the approved spec instead of page-local restyling
+- commands are explicit
+- changed files are named directly
+- each task ties back to a concrete product change
 
 ### Type Consistency
 
-- all status helpers point back to the existing shared contract enums
-- pricing and event time display stay centralized in `formatters.ts`
-- homepage ranking and sale calendar derive from the same event summary shape
+- nav keys stay aligned between `navigation.ts` and `AppBottomNav.tsx`
+- shared components move toward optional descriptive copy rather than requiring it
+- page rewrites keep existing route file names and API contracts intact

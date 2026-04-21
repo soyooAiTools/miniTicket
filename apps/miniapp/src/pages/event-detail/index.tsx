@@ -1,4 +1,4 @@
-import { Text, View } from '@tarojs/components';
+import { Image, Text, View } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
 import { useMemo, useState } from 'react';
 
@@ -9,11 +9,10 @@ import type {
 } from '../../../../../packages/contracts/src';
 import {
   EmptyState,
-  PageHero,
   PageShell,
-  PosterEventCard,
   PrimaryButton,
   SectionHeading,
+  StatusChip,
   StickyActionBar,
   SurfaceCard,
 } from '../../components/ui';
@@ -23,7 +22,11 @@ import {
   formatCurrencyCny,
   formatSaleWindow,
 } from '../../ui/formatters';
-import { getSaleStatusMeta } from '../../ui/status';
+import {
+  getShowcaseEventDetail,
+  shouldUseShowcaseContent,
+} from '../../ui/showcase-data';
+import { getSaleStatusMeta, getTicketTypeLabel } from '../../ui/status';
 
 export default function EventDetailPage() {
   const [eventDetail, setEventDetail] = useState<EventDetail | null>(null);
@@ -31,6 +34,14 @@ export default function EventDetailPage() {
   const [selectedTierId, setSelectedTierId] = useState('');
 
   useLoad((params) => {
+    if (shouldUseShowcaseContent()) {
+      const result = getShowcaseEventDetail(params?.id);
+      setEventDetail(result);
+      setSelectedSessionId(result.sessions[0]?.id ?? '');
+      setSelectedTierId(result.sessions[0]?.ticketTiers[0]?.id ?? '');
+      return;
+    }
+
     if (!params?.id) {
       return;
     }
@@ -46,7 +57,7 @@ export default function EventDetailPage() {
       .catch(() => {
         Taro.showToast({
           icon: 'none',
-          title: '加载演出详情失败',
+          title: '加载演出失败',
         });
       });
   });
@@ -84,71 +95,78 @@ export default function EventDetailPage() {
     return (
       <PageShell dense>
         <SurfaceCard>
-          <EmptyState
-            description='平台正在同步演出详情，请稍后重新进入。'
-            title='正在加载演出信息'
-          />
+          <EmptyState title='演出加载中' />
         </SurfaceCard>
       </PageShell>
     );
   }
 
+  const saleStatusMeta = getSaleStatusMeta(eventDetail.saleStatus);
+
   return (
     <PageShell dense>
-      <PageHero
-        description='先确认场次和票档，再进入观演人选择与支付。'
-        eyebrow='Event detail'
-        title='演出详情'
-      />
-
-      <PosterEventCard
-        coverImageUrl={eventDetail.coverImageUrl}
-        description={eventDetail.description ?? '官方票务平台已同步该演出的完整信息。'}
-        eyebrow={`${eventDetail.city} · ${eventDetail.venueName}`}
-        metaLine={`起售价 ${formatCurrencyCny(eventDetail.minPrice)}`}
-        secondaryMeta={
-          selectedSession ? formatCompactDateTime(selectedSession.startsAt) : '场次待定'
-        }
-        statusMeta={getSaleStatusMeta(eventDetail.saleStatus)}
-        title={eventDetail.title}
-      />
+      <View className='detail-hero fade-stagger'>
+        <View className='detail-hero__media'>
+          {eventDetail.coverImageUrl ? (
+            <Image
+              className='detail-hero__image'
+              mode='aspectFill'
+              src={eventDetail.coverImageUrl}
+            />
+          ) : (
+            <View className='detail-hero__placeholder'>
+              <Text className='detail-hero__placeholder-title'>{eventDetail.title}</Text>
+            </View>
+          )}
+          <View className='detail-hero__status'>
+            <StatusChip meta={saleStatusMeta} />
+          </View>
+          <View className='detail-hero__content'>
+            <Text className='detail-hero__eyebrow'>演出详情</Text>
+            <Text className='detail-hero__title'>{eventDetail.title}</Text>
+            <View className='detail-hero__meta-stack'>
+              <Text className='detail-hero__meta'>
+                {eventDetail.city} · {eventDetail.venueName}
+              </Text>
+              <Text className='detail-hero__meta'>
+                {selectedSession
+                  ? `开演 ${formatCompactDateTime(selectedSession.startsAt)}`
+                  : '场次待定'}
+              </Text>
+              <Text className='detail-hero__price'>
+                起售价 {formatCurrencyCny(eventDetail.minPrice)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
 
       <SurfaceCard>
-        <SectionHeading
-          description='当前页面优先展示会直接影响购票决策的核心信息。'
-          eyebrow='Overview'
-          title='演出信息'
-        />
+        <SectionHeading title='购票信息' />
         <View className='meta-grid'>
           <View className='meta-grid__item'>
-            <Text className='meta-grid__label'>演出城市</Text>
-            <Text className='meta-grid__value'>{eventDetail.city}</Text>
-          </View>
-          <View className='meta-grid__item'>
-            <Text className='meta-grid__label'>演出场馆</Text>
+            <Text className='meta-grid__label'>场馆</Text>
             <Text className='meta-grid__value'>{eventDetail.venueName}</Text>
           </View>
           <View className='meta-grid__item'>
-            <Text className='meta-grid__label'>当前状态</Text>
-            <Text className='meta-grid__value'>
-              {getSaleStatusMeta(eventDetail.saleStatus).label}
-            </Text>
+            <Text className='meta-grid__label'>城市</Text>
+            <Text className='meta-grid__value'>{eventDetail.city}</Text>
           </View>
           <View className='meta-grid__item'>
-            <Text className='meta-grid__label'>退款入口</Text>
+            <Text className='meta-grid__label'>状态</Text>
+            <Text className='meta-grid__value'>{saleStatusMeta.label}</Text>
+          </View>
+          <View className='meta-grid__item'>
+            <Text className='meta-grid__label'>售后</Text>
             <Text className='meta-grid__value'>
-              {eventDetail.refundEntryEnabled ? '已开放' : '暂未开放'}
+              {eventDetail.refundEntryEnabled ? '已开放' : '未开放'}
             </Text>
           </View>
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          description='先选场次，再从场次里确认票档。'
-          eyebrow='Sessions'
-          title='场次与票档'
-        />
+        <SectionHeading title='场次与票档' />
         {eventDetail.sessions.map((session: EventSession) => {
           const sessionSelected = session.id === selectedSession?.id;
 
@@ -166,10 +184,10 @@ export default function EventDetailPage() {
                 {sessionSelected ? ' · 已选中' : ''}
               </Text>
               <Text className='detail-tier__meta'>
-                开演时间 {formatCompactDateTime(session.startsAt)}
+                开演 {formatCompactDateTime(session.startsAt)}
               </Text>
               <Text className='detail-tier__meta'>
-                销售窗口 {formatSaleWindow(session.saleStartsAt, session.saleEndsAt)}
+                开售 {formatSaleWindow(session.saleStartsAt, session.saleEndsAt)}
               </Text>
               {sessionSelected ? (
                 <View style={{ marginTop: '16px' }}>
@@ -193,7 +211,8 @@ export default function EventDetailPage() {
                         {tier.id === selectedTier?.id ? ' · 当前票档' : ''}
                       </Text>
                       <Text className='detail-tier__meta'>
-                        {formatCurrencyCny(tier.price)} · 库存 {tier.inventory} · {tier.ticketType === 'PAPER_TICKET' ? '纸质票' : '电子票'}
+                        {formatCurrencyCny(tier.price)} · 库存 {tier.inventory} ·{' '}
+                        {getTicketTypeLabel(tier.ticketType)}
                       </Text>
                     </View>
                   ))}
@@ -205,25 +224,18 @@ export default function EventDetailPage() {
       </SurfaceCard>
 
       <SurfaceCard muted>
-        <SectionHeading
-          description='把介绍和规则放在购票决策之后，保持转化优先。'
-          eyebrow='Notes'
-          title='购票说明'
-        />
+        <SectionHeading title='购票规则' />
         <Text className='calendar-item__meta'>
-          观演人信息提交后将进入实名履约流程，请在支付前确认信息准确。
+          下单前请确认观演人信息与证件一致。
         </Text>
         <Text className='calendar-item__meta'>
-          电子票最晚演出前三天确认，纸质票最晚演出前七天确认。
-        </Text>
-        <Text className='calendar-item__meta'>
-          如需售后，请以订单详情页中的实际开放状态为准。
+          售后入口以订单状态和活动规则为准。
         </Text>
       </SurfaceCard>
 
       <StickyActionBar>
         <PrimaryButton onClick={handlePurchase}>
-          {selectedTier ? `选择观演人并继续 ${selectedTier.name}` : '选择票档后继续'}
+          {selectedTier ? `选择观演人 · ${selectedTier.name}` : '选择票档后继续'}
         </PrimaryButton>
       </StickyActionBar>
     </PageShell>

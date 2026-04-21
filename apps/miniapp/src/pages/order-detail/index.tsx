@@ -15,7 +15,14 @@ import {
 } from '../../components/ui';
 import { request } from '../../services/request';
 import { formatCompactDateTime, formatCurrencyCny } from '../../ui/formatters';
-import { getRefundEntrySummary } from '../../ui/order-presenters';
+import {
+  getOrderTimelineMeta,
+  getRefundEntrySummary,
+} from '../../ui/order-presenters';
+import {
+  getShowcaseOrderDetail,
+  shouldUseShowcaseContent,
+} from '../../ui/showcase-data';
 import { getOrderStatusMeta, getTicketTypeLabel } from '../../ui/status';
 
 export default function OrderDetailPage() {
@@ -24,6 +31,11 @@ export default function OrderDetailPage() {
 
   useDidShow(() => {
     const orderId = router.params?.id;
+
+    if (shouldUseShowcaseContent()) {
+      setOrderDetail(getShowcaseOrderDetail(orderId));
+      return;
+    }
 
     if (!orderId) {
       return;
@@ -45,10 +57,7 @@ export default function OrderDetailPage() {
     return (
       <PageShell dense>
         <SurfaceCard>
-          <EmptyState
-            description='订单详情正在同步，请稍后再试。'
-            title='正在加载订单'
-          />
+          <EmptyState title='订单加载中' />
         </SurfaceCard>
       </PageShell>
     );
@@ -58,21 +67,11 @@ export default function OrderDetailPage() {
     refundEntryEnabled: orderDetail.refundEntryEnabled,
     status: orderDetail.status,
   });
+  const timelineMeta = getOrderTimelineMeta(orderDetail.status, orderDetail.ticketType);
 
   return (
     <PageShell dense>
-      <PageHero
-        description='把订单状态、履约进度和售后入口整合到一个页面里。'
-        eyebrow='Order detail'
-        title='订单详情'
-      >
-        <View className='pill-row'>
-          <View className='pill-row__item'>{orderDetail.orderNumber}</View>
-          <View className='pill-row__item'>
-            {formatCurrencyCny(orderDetail.totalAmount)}
-          </View>
-        </View>
-      </PageHero>
+      <PageHero title='订单详情' />
 
       <SurfaceCard>
         <View className='stack-header'>
@@ -108,11 +107,7 @@ export default function OrderDetailPage() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          description='订单的每个观演人和票档明细都在这里。'
-          eyebrow='Items'
-          title='票档明细'
-        />
+        <SectionHeading title='票档明细' />
         {orderDetail.items.map((item) => (
           <View key={item.id} className='detail-ticket'>
             <Text className='detail-ticket__title'>
@@ -130,25 +125,17 @@ export default function OrderDetailPage() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          description='直接看当前平台认为最重要的一条进度提示。'
-          eyebrow='Timeline'
-          title='履约进度'
-        />
+        <SectionHeading title='订单进度' />
         <View className='note-strip'>
-          <Text className='note-strip__title'>{orderDetail.timeline.title}</Text>
+          <Text className='note-strip__title'>{timelineMeta.title}</Text>
           <Text className='note-strip__description'>
-            {orderDetail.timeline.description}
+            {timelineMeta.description}
           </Text>
         </View>
       </SurfaceCard>
 
       <SurfaceCard muted>
-        <SectionHeading
-          description='售后入口是否开放，以当前订单状态和活动规则为准。'
-          eyebrow='After-sales'
-          title='售后说明'
-        />
+        <SectionHeading title='售后状态' />
         <Text className='calendar-item__title'>{refundSummary.title}</Text>
         <Text className='calendar-item__meta'>{refundSummary.description}</Text>
       </SurfaceCard>

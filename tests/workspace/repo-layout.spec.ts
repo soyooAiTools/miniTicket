@@ -107,9 +107,9 @@ describe('repo layout', () => {
     }>('apps/miniapp/package.json');
 
     expect(miniappPackage.scripts).toEqual({
-      'dev:weapp': 'taro build --type weapp --watch',
+      'dev:weapp': 'taro build --type weapp --watch --mode development',
       'dev:weapp:device': 'node ../../scripts/run-miniapp-device.mjs dev',
-      'build:weapp': 'taro build --type weapp',
+      'build:weapp': 'taro build --type weapp --mode production',
       'build:weapp:device': 'node ../../scripts/run-miniapp-device.mjs build',
       test: 'vitest run',
       lint: 'eslint src --ext .ts,.tsx',
@@ -130,7 +130,7 @@ describe('repo layout', () => {
       }>('apps/miniapp/project.config.json'),
     ).toEqual(
       expect.objectContaining({
-        miniprogramRoot: './dist',
+        miniprogramRoot: 'dist/',
         projectname: 'miniapp',
         compileType: 'miniprogram',
         setting: expect.objectContaining({

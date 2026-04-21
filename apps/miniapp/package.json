@@ -20,9 +20,9 @@
     "webpack": "5.91.0"
   },
   "scripts": {
-    "dev:weapp": "taro build --type weapp --watch",
+    "dev:weapp": "taro build --type weapp --watch --mode development",
     "dev:weapp:device": "node ../../scripts/run-miniapp-device.mjs dev",
-    "build:weapp": "taro build --type weapp",
+    "build:weapp": "taro build --type weapp --mode production",
     "build:weapp:device": "node ../../scripts/run-miniapp-device.mjs build",
     "test": "vitest run",
     "lint": "eslint src --ext .ts,.tsx"

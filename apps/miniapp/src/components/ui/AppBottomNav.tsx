@@ -28,7 +28,6 @@ export function AppBottomNav({ activeKey }: AppBottomNavProps) {
           }}
         >
           <Text className='app-nav__label'>{item.label}</Text>
-          <Text className='app-nav__description'>{item.description}</Text>
         </View>
       ))}
     </View>

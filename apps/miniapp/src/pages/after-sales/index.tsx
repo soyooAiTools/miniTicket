@@ -76,7 +76,7 @@ export default function AfterSalesPage() {
     if (!orderId) {
       Taro.showToast({
         icon: 'none',
-        title: '缺少订单编号',
+        title: '缺少订单号',
       });
     }
   });
@@ -112,7 +112,7 @@ export default function AfterSalesPage() {
     if (!orderId) {
       Taro.showToast({
         icon: 'none',
-        title: '缺少订单编号',
+        title: '缺少订单号',
       });
       return;
     }
@@ -157,10 +157,7 @@ export default function AfterSalesPage() {
     return (
       <PageShell dense>
         <SurfaceCard>
-          <EmptyState
-            description='请从订单详情页进入售后申请。'
-            title='缺少订单信息'
-          />
+          <EmptyState title='缺少订单信息' />
         </SurfaceCard>
       </PageShell>
     );
@@ -169,38 +166,26 @@ export default function AfterSalesPage() {
   return (
     <PageShell dense>
       <PageHero
-        description='提前确认扣费规则、退款金额预估和售后原因，再提交申请。'
-        eyebrow='After-sales'
-        title='退款申请'
-      >
-        <View className='pill-row'>
-          <View className='pill-row__item'>{orderDetail?.orderNumber ?? orderId}</View>
-          {refundSummary ? <View className='pill-row__item'>{refundSummary.title}</View> : null}
-        </View>
-      </PageHero>
+        meta={
+          <Text className='calendar-item__meta'>{orderDetail?.orderNumber ?? orderId}</Text>
+        }
+        title='售后申请'
+      />
 
       <SurfaceCard>
-        <SectionHeading
-          description='先确认当前订单是否已经开放售后入口。'
-          eyebrow='Eligibility'
-          title='当前售后状态'
-        />
+        <SectionHeading title='售后状态' />
         {refundSummary ? (
           <>
             <Text className='calendar-item__title'>{refundSummary.title}</Text>
             <Text className='calendar-item__meta'>{refundSummary.description}</Text>
           </>
         ) : (
-          <Text className='calendar-item__meta'>正在同步订单售后状态。</Text>
+          <Text className='calendar-item__meta'>订单状态同步中</Text>
         )}
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          description='不同原因和演出开始时间，会影响服务费和退款金额。'
-          eyebrow='Reason'
-          title='申请原因'
-        />
+        <SectionHeading title='退款原因' />
         <View className='selector-row'>
           <View
             className={
@@ -234,7 +219,7 @@ export default function AfterSalesPage() {
           </View>
         </View>
 
-        <Text className='section-caption'>距开演剩余天数</Text>
+        <Text className='section-caption'>距开演天数</Text>
         <Input
           type='number'
           value={daysBeforeStartText}
@@ -247,20 +232,16 @@ export default function AfterSalesPage() {
               orderDetail?.totalAmount,
             );
           }}
-          placeholder='请输入剩余天数'
+          placeholder='请输入天数'
           className='soft-input'
         />
         <Text className='calendar-item__meta'>
-          若因身份信息错误且距开演 3 天内发起售后，会按规则扣除 20% 服务费。
+          身份信息错误且距开演 3 天内申请，将按规则扣除 20% 服务费。
         </Text>
       </SurfaceCard>
 
       <SurfaceCard muted>
-        <SectionHeading
-          description='计算结果会随着原因和时间变化实时刷新。'
-          eyebrow='Preview'
-          title='退款测算'
-        />
+        <SectionHeading title='退款测算' />
         <View className='summary-grid'>
           <View className='summary-grid__item'>
             <Text className='summary-grid__label'>原支付金额</Text>

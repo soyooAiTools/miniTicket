@@ -125,44 +125,35 @@ export default function CheckoutPage() {
 
   return (
     <PageShell dense>
-      <PageHero
-        description='确认票档、观演人和须知后，发起微信支付。'
-        eyebrow='Checkout'
-        title='确认支付'
-      />
+      <PageHero title='确认支付' />
 
       <SurfaceCard>
-        <Text className='section-heading__eyebrow'>Selection</Text>
         <Text className='section-heading__title'>当前选择</Text>
         {checkoutParams ? (
           <View style={{ marginTop: '18px' }}>
-            <Text className='calendar-item__meta'>票档 ID：{checkoutParams.tierId}</Text>
             <Text className='calendar-item__meta'>
-              观演人：{checkoutParams.viewerIds.join('、')}
+              观演人：已选 {checkoutParams.viewerIds.length} 位
             </Text>
             <Text className='calendar-item__meta'>
               数量：{checkoutParams.quantity} · 票种：
               {checkoutParams.ticketType === 'PAPER_TICKET' ? '纸质票' : '电子票'}
             </Text>
+            {payableOrderId ? (
+              <Text className='calendar-item__meta'>支付订单已生成</Text>
+            ) : null}
           </View>
         ) : (
-          <Text className='calendar-item__meta'>
-            当前没有可用于支付的票档或观演人信息。
-          </Text>
+          <Text className='calendar-item__meta'>当前没有可支付信息</Text>
         )}
       </SurfaceCard>
 
       <SurfaceCard muted>
-        <Text className='section-heading__eyebrow'>Rules</Text>
-        <Text className='section-heading__title'>购票须知</Text>
+        <Text className='section-heading__title'>购票规则</Text>
         <Text className='calendar-item__meta'>
-          观演人信息在出票前将作为实名履约依据，请确保填写准确。
+          下单前请确认观演人信息与证件一致。
         </Text>
         <Text className='calendar-item__meta'>
-          电子票最晚演出前三天确认，纸质票最晚演出前七天确认。
-        </Text>
-        <Text className='calendar-item__meta'>
-          因用户信息错误导致无法录入的，将按规则扣除服务费。
+          售后入口以订单状态和活动规则为准。
         </Text>
       </SurfaceCard>
 

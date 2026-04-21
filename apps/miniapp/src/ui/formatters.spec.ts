@@ -8,7 +8,7 @@ import {
 
 describe('formatters', () => {
   it('formats integer price as cny label', () => {
-    expect(formatCurrencyCny(399)).toBe('399 RMB');
+    expect(formatCurrencyCny(399)).toBe('¥399');
   });
 
   it('formats iso time into compact date copy', () => {
@@ -18,6 +18,6 @@ describe('formatters', () => {
   it('builds sale window copy when both start and end exist', () => {
     expect(
       formatSaleWindow('2026-05-01T10:00:00.000Z', '2026-05-02T18:00:00.000Z'),
-    ).toContain('2026');
+    ).toContain('至');
   });
 });

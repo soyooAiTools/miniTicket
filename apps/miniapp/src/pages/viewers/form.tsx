@@ -13,10 +13,10 @@ import { request } from '../../services/request';
 import { ensureSession } from '../../services/session';
 
 type CreateViewerPayload = {
-  userId: string;
-  name: string;
   idCard: string;
   mobile: string;
+  name: string;
+  userId: string;
 };
 
 type FormState = {
@@ -73,15 +73,10 @@ export default function ViewerFormPage() {
 
   return (
     <PageShell dense>
-      <PageHero
-        description='实名信息将参与出票履约，请在提交前再次确认姓名、证件号和手机号。'
-        eyebrow='Create viewer'
-        title='新增观演人'
-      />
+      <PageHero title='新增观演人' />
 
       <Form onSubmit={submit}>
         <SurfaceCard>
-          <Text className='section-heading__eyebrow'>Basic info</Text>
           <Text className='section-heading__title'>实名信息</Text>
           <View style={{ marginTop: '18px' }}>
             <Text className='meta-grid__label'>姓名</Text>
@@ -109,9 +104,8 @@ export default function ViewerFormPage() {
         </SurfaceCard>
 
         <SurfaceCard muted>
-          <Text className='section-heading__eyebrow'>Notice</Text>
           <Text className='calendar-item__meta'>
-            保存后会在购票时直接复用，出票前请勿填写错误信息。
+            请确认姓名、证件号和手机号一致。
           </Text>
         </SurfaceCard>
 

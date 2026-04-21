@@ -7,7 +7,6 @@ import {
   PageHero,
   PageShell,
   PrimaryButton,
-  SectionHeading,
   StatusChip,
   StickyActionBar,
   SurfaceCard,
@@ -90,8 +89,7 @@ export default function PaymentResultPage() {
   return (
     <PageShell dense>
       <PageHero
-        description='支付完成后，平台会先确认订单状态，再自动引导进入订单详情。'
-        eyebrow='Payment result'
+        meta={<Text className='calendar-item__meta'>{orderId || '未获取订单号'}</Text>}
         title={paymentMeta.title}
       />
 
@@ -106,19 +104,16 @@ export default function PaymentResultPage() {
       </SurfaceCard>
 
       <SurfaceCard muted>
-        <SectionHeading
-          description='当前订单号和状态会持续同步。'
-          eyebrow='Status'
-          title='结果同步中'
-        />
         <View className='detail-list'>
           <View className='detail-list__row'>
             <Text className='detail-list__label'>订单号</Text>
-            <Text className='detail-list__value'>{orderId || '未获取到订单号'}</Text>
+            <Text className='detail-list__value'>{orderId || '未获取订单号'}</Text>
           </View>
           <View className='detail-list__row'>
             <Text className='detail-list__label'>当前状态</Text>
-            <Text className='detail-list__value'>{paymentStatus}</Text>
+            <Text className='detail-list__value'>
+              {getOrderStatusMeta(paymentStatus).label}
+            </Text>
           </View>
         </View>
       </SurfaceCard>
