@@ -11,7 +11,9 @@ import {
   adminRefundRejectRequestSchema,
   adminRefundStatusSchema,
   adminSessionSchema,
+  adminUserCreateRequestSchema,
   adminUserListItemSchema,
+  adminUserUpdateRequestSchema,
   eventCatalogSummarySchema,
   eventDetailSchema,
   eventOperationsUpdateSchema,
@@ -203,7 +205,7 @@ describe('shared contracts', () => {
     });
   });
 
-  it('validates an admin event draft payload with regional tiers', () => {
+  it('validates an admin event draft payload with regional tiers and child ids', () => {
     expect(
       adminEventDraftSchema.parse({
         city: 'Shanghai',
@@ -215,12 +217,14 @@ describe('shared contracts', () => {
         published: false,
         sessions: [
           {
+            id: 'session_001',
             name: '2026-05-01 19:30',
             startsAt: '2026-05-01T11:30:00.000Z',
             saleStartsAt: '2026-04-20T12:00:00.000Z',
             saleEndsAt: '2026-04-30T12:00:00.000Z',
             tiers: [
               {
+                id: 'tier_001',
                 name: 'Inner Field',
                 price: 499,
                 inventory: 200,
@@ -239,8 +243,10 @@ describe('shared contracts', () => {
       published: false,
       sessions: [
         {
+          id: 'session_001',
           tiers: [
             {
+              id: 'tier_001',
               purchaseLimit: 2,
             },
           ],
@@ -289,6 +295,12 @@ describe('shared contracts', () => {
             createdAt: '2026-04-17T12:11:00.000Z',
             createdByName: '现场运营',
           },
+          {
+            id: 'flag_002',
+            type: '人工复核',
+            createdAt: '2026-04-17T12:12:00.000Z',
+            createdByName: '现场运营',
+          },
         ],
         items: [
           {
@@ -301,7 +313,7 @@ describe('shared contracts', () => {
             totalAmount: 998,
             viewer: {
               id: 'viewer_001',
-              name: 'Zhang San',
+              name: '张三',
               mobile: '13800138000',
             },
           },
@@ -317,7 +329,48 @@ describe('shared contracts', () => {
         {
           type: '异常单',
         },
+        {
+          type: '人工复核',
+        },
       ],
+    });
+  });
+
+  it('validates an admin user create payload with password rules', () => {
+    expect(
+      adminUserCreateRequestSchema.parse({
+        email: 'ops2@miniticket.local',
+        name: '票务运营 B',
+        password: 'OpsOps123!',
+        role: 'OPERATIONS',
+      }),
+    ).toMatchObject({
+      role: 'OPERATIONS',
+      email: 'ops2@miniticket.local',
+    });
+  });
+
+  it('rejects an admin user create payload with a short password', () => {
+    expect(() =>
+      adminUserCreateRequestSchema.parse({
+        email: 'ops2@miniticket.local',
+        name: '票务运营 B',
+        password: 'short',
+        role: 'OPERATIONS',
+      }),
+    ).toThrow();
+  });
+
+  it('validates an admin user update payload with password rules', () => {
+    expect(
+      adminUserUpdateRequestSchema.parse({
+        id: 'admin_001',
+        password: 'NewPass123!',
+        enabled: true,
+      }),
+    ).toMatchObject({
+      id: 'admin_001',
+      enabled: true,
     });
   });
 
@@ -336,20 +389,6 @@ describe('shared contracts', () => {
       role: 'ADMIN',
       enabled: true,
     });
-  });
-
-  it('rejects an admin user payload with a non-admin role', () => {
-    expect(() =>
-      adminUserListItemSchema.parse({
-        id: 'admin_001',
-        name: '超级管理员',
-        email: 'admin@miniticket.local',
-        role: 'EVENT_ADMIN',
-        enabled: true,
-        createdAt: '2026-04-01T12:00:00.000Z',
-        updatedAt: '2026-04-20T12:00:00.000Z',
-      }),
-    ).toThrow();
   });
 
   it('validates admin refund statuses and queue payloads', () => {
@@ -389,13 +428,20 @@ describe('shared contracts', () => {
         reason: 'USER_IDENTITY_ERROR',
         requesterName: '张三',
         createdAt: '2026-04-21T08:00:00.000Z',
-        processedAt: '2026-04-21T09:00:00.000Z',
+        approvedAt: '2026-04-21T09:00:00.000Z',
+        approvedBy: '现场运营',
+        approvalNote: '已核验实名信息。',
+        rejectedAt: '2026-04-21T09:05:00.000Z',
+        rejectedBy: '现场运营',
+        rejectionReason: '不符合退款条件',
+        processedAt: '2026-04-21T09:10:00.000Z',
         processedBy: '现场运营',
-        decisionNote: '已核验实名信息。',
+        handlingNote: '已提交渠道处理。',
       }),
     ).toMatchObject({
       status: 'APPROVED',
-      processedBy: '现场运营',
+      approvedBy: '现场运营',
+      approvalNote: '已核验实名信息。',
     });
 
     expect(

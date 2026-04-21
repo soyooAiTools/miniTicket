@@ -23,9 +23,15 @@ export const adminRefundQueueItemSchema = z
   .strict();
 
 export const adminRefundDetailSchema = adminRefundQueueItemSchema.extend({
+  approvedAt: z.string().datetime().optional(),
+  approvedBy: z.string().min(1).optional(),
+  approvalNote: z.string().min(1).optional(),
+  rejectedAt: z.string().datetime().optional(),
+  rejectedBy: z.string().min(1).optional(),
+  rejectionReason: z.string().min(1).optional(),
   processedAt: z.string().datetime().optional(),
   processedBy: z.string().min(1).optional(),
-  decisionNote: z.string().min(1).optional(),
+  handlingNote: z.string().min(1).optional(),
 });
 
 export const adminRefundApproveRequestSchema = z

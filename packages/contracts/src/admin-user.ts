@@ -19,7 +19,7 @@ export const adminUserCreateRequestSchema = z
     email: z.string().email(),
     name: z.string().min(1),
     role: adminRoleSchema,
-    password: z.string().min(1),
+    password: z.string().min(8),
   })
   .strict();
 
@@ -29,7 +29,7 @@ export const adminUserUpdateRequestSchema = z
     email: z.string().email().optional(),
     name: z.string().min(1).optional(),
     role: adminRoleSchema.optional(),
-    password: z.string().min(1).optional(),
+    password: z.string().min(8).optional(),
     enabled: z.boolean().optional(),
   })
   .strict();

@@ -4,6 +4,7 @@ import { saleStatusSchema } from './event';
 
 export const adminRegionalTierDraftSchema = z
   .object({
+    id: z.string().min(1).optional(),
     name: z.string().min(1),
     price: z.number().int().positive(),
     inventory: z.number().int().nonnegative(),
@@ -18,6 +19,7 @@ export const adminRegionalTierDraftSchema = z
 
 export const adminEventSessionDraftSchema = z
   .object({
+    id: z.string().min(1).optional(),
     name: z.string().min(1),
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime().optional(),
