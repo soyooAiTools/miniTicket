@@ -10,24 +10,21 @@ export const adminOrderNoteSchema = z
     id: z.string().min(1),
     content: z.string().min(1),
     createdAt: z.string().datetime(),
-    authorName: z.string().min(1),
+    createdByName: z.string().min(1),
   })
   .strict();
 
 export const adminOrderFlagSchema = z
   .object({
-    code: z.string().min(1),
-    label: z.string().min(1),
-    active: z.boolean(),
+    id: z.string().min(1),
+    type: z.string().min(1),
+    note: z.string().min(1),
+    createdAt: z.string().datetime(),
+    createdByName: z.string().min(1),
   })
   .strict();
 
-export const adminOrderListItemSchema = orderListItemSchema
-  .extend({
-    noteCount: z.number().int().nonnegative().optional(),
-    flagCount: z.number().int().nonnegative().optional(),
-  })
-  .strict();
+export const adminOrderListItemSchema = orderListItemSchema;
 
 export const adminOrderDetailSchema = z
   .object({

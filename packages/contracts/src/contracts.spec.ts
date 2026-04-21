@@ -95,6 +95,11 @@ describe('shared contracts', () => {
                 price: 499,
                 inventory: 200,
                 ticketType: 'E_TICKET',
+                purchaseLimit: 2,
+                refundable: true,
+                refundDeadlineAt: '2026-04-28T12:00:00.000Z',
+                requiresRealName: true,
+                sortOrder: 1,
               },
             ],
           },
@@ -139,18 +144,16 @@ describe('shared contracts', () => {
   it('validates an admin session payload', () => {
     expect(
       adminSessionSchema.parse({
-        token: 'admin-session-token-123',
         user: {
-          id: 'admin_001',
-          name: 'Zhao Ling',
-          role: 'EVENT_ADMIN',
+          email: 'ops@miniticket.local',
+          id: 'user_ops_001',
+          name: '现场运营',
+          role: 'OPERATIONS',
         },
-        expiresAt: '2026-04-24T09:30:00.000Z',
       }),
     ).toMatchObject({
-      token: 'admin-session-token-123',
       user: {
-        role: 'EVENT_ADMIN',
+        role: 'OPERATIONS',
       },
     });
   });
@@ -158,26 +161,25 @@ describe('shared contracts', () => {
   it('validates an admin dashboard summary payload', () => {
     expect(
       adminDashboardSummarySchema.parse({
-        eventCount: 12,
-        orderCount: 84,
+        activeEventCount: 3,
+        upcomingEventCount: 2,
         refundCount: 5,
-        userCount: 1024,
+        flaggedOrderCount: 6,
         recentActions: [
           {
-            id: 'action_001',
-            action: 'APPROVED_REFUND',
-            targetType: 'order',
-            targetId: 'ord_20260417_001',
-            actorName: 'Zhao Ling',
-            createdAt: '2026-04-17T12:05:00.000Z',
+            action: 'EVENT_PUBLISHED',
+            actorName: '超级管理员',
+            createdAt: '2026-04-21T08:30:00.000Z',
+            targetId: 'evt_shanghai_001',
+            targetType: 'EVENT',
           },
         ],
       }),
     ).toMatchObject({
-      eventCount: 12,
+      flaggedOrderCount: 6,
       recentActions: [
         {
-          action: 'APPROVED_REFUND',
+          action: 'EVENT_PUBLISHED',
         },
       ],
     });
@@ -186,23 +188,21 @@ describe('shared contracts', () => {
   it('validates an admin event draft payload with regional tiers', () => {
     expect(
       adminEventDraftSchema.parse({
-        title: 'Jay Chou Carnival World Tour',
         city: 'Shanghai',
         venueName: 'Shanghai Stadium',
+        venueAddress: 'Shanghai Stadium Road 1',
+        title: 'Jay Chou Carnival World Tour',
         description: 'Admin draft payload for the MVP.',
         coverImageUrl: 'https://example.com/cover.jpg',
         published: false,
-        refundEntryEnabled: true,
         sessions: [
           {
-            id: 'session_001',
             name: '2026-05-01 19:30',
             startsAt: '2026-05-01T11:30:00.000Z',
             saleStartsAt: '2026-04-20T12:00:00.000Z',
             saleEndsAt: '2026-04-30T12:00:00.000Z',
-            regionalTiers: [
+            tiers: [
               {
-                id: 'tier_001',
                 name: 'Inner Field',
                 price: 499,
                 inventory: 200,
@@ -221,7 +221,7 @@ describe('shared contracts', () => {
       published: false,
       sessions: [
         {
-          regionalTiers: [
+          tiers: [
             {
               purchaseLimit: 2,
             },
@@ -260,14 +260,16 @@ describe('shared contracts', () => {
             id: 'note_001',
             content: 'Buyer requested a seat change.',
             createdAt: '2026-04-17T12:10:00.000Z',
-            authorName: 'Zhao Ling',
+            createdByName: '现场运营',
           },
         ],
         flags: [
           {
-            code: 'NEEDS_REVIEW',
-            label: 'Needs review',
-            active: true,
+            id: 'flag_001',
+            type: '异常单',
+            note: '支付成功后长时间未出票',
+            createdAt: '2026-04-17T12:11:00.000Z',
+            createdByName: '现场运营',
           },
         ],
         items: [
@@ -290,12 +292,12 @@ describe('shared contracts', () => {
     ).toMatchObject({
       notes: [
         {
-          content: 'Buyer requested a seat change.',
+          createdByName: '现场运营',
         },
       ],
       flags: [
         {
-          code: 'NEEDS_REVIEW',
+          type: '异常单',
         },
       ],
     });
@@ -305,16 +307,16 @@ describe('shared contracts', () => {
     expect(
       adminUserListItemSchema.parse({
         id: 'admin_001',
-        name: 'Zhao Ling',
-        mobile: '13800138000',
-        role: 'EVENT_ADMIN',
-        active: true,
+        name: '超级管理员',
+        email: 'admin@miniticket.local',
+        role: 'ADMIN',
+        enabled: true,
         createdAt: '2026-04-01T12:00:00.000Z',
-        lastLoginAt: '2026-04-20T12:00:00.000Z',
+        updatedAt: '2026-04-20T12:00:00.000Z',
       }),
     ).toMatchObject({
-      role: 'EVENT_ADMIN',
-      active: true,
+      role: 'ADMIN',
+      enabled: true,
     });
   });
 

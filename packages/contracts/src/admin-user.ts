@@ -6,32 +6,31 @@ export const adminUserListItemSchema = z
   .object({
     id: z.string().min(1),
     name: z.string().min(1),
-    mobile: z.string().regex(/^1\d{10}$/),
+    email: z.string().email(),
     role: adminRoleSchema,
-    active: z.boolean(),
+    enabled: z.boolean(),
     createdAt: z.string().datetime(),
-    lastLoginAt: z.string().datetime().optional(),
+    updatedAt: z.string().datetime(),
   })
   .strict();
 
 export const adminUserCreateRequestSchema = z
   .object({
+    email: z.string().email(),
     name: z.string().min(1),
-    mobile: z.string().regex(/^1\d{10}$/),
     role: adminRoleSchema,
     password: z.string().min(1),
-    active: z.boolean().optional(),
   })
   .strict();
 
 export const adminUserUpdateRequestSchema = z
   .object({
     id: z.string().min(1),
+    email: z.string().email().optional(),
     name: z.string().min(1).optional(),
-    mobile: z.string().regex(/^1\d{10}$/).optional(),
     role: adminRoleSchema.optional(),
     password: z.string().min(1).optional(),
-    active: z.boolean().optional(),
+    enabled: z.boolean().optional(),
   })
   .strict();
 

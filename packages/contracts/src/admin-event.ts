@@ -4,28 +4,26 @@ import { saleStatusSchema } from './event';
 
 export const adminRegionalTierDraftSchema = z
   .object({
-    id: z.string().min(1).optional(),
     name: z.string().min(1),
-    price: z.number().int().nonnegative(),
+    price: z.number().int().positive(),
     inventory: z.number().int().nonnegative(),
     ticketType: z.enum(['E_TICKET', 'PAPER_TICKET']),
-    purchaseLimit: z.number().int().positive().optional(),
-    refundable: z.boolean().optional(),
+    purchaseLimit: z.number().int().positive(),
+    refundable: z.boolean(),
     refundDeadlineAt: z.string().datetime().optional(),
-    requiresRealName: z.boolean().optional(),
-    sortOrder: z.number().int().nonnegative().optional(),
+    requiresRealName: z.boolean(),
+    sortOrder: z.number().int().nonnegative(),
   })
   .strict();
 
 export const adminEventSessionDraftSchema = z
   .object({
-    id: z.string().min(1).optional(),
     name: z.string().min(1),
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime().optional(),
     saleStartsAt: z.string().datetime().optional(),
     saleEndsAt: z.string().datetime().optional(),
-    regionalTiers: z.array(adminRegionalTierDraftSchema),
+    tiers: z.array(adminRegionalTierDraftSchema).min(1),
   })
   .strict();
 
@@ -34,12 +32,12 @@ const adminEventDraftBaseSchema = z
     title: z.string().min(1),
     city: z.string().min(1),
     venueName: z.string().min(1),
+    venueAddress: z.string().min(1),
     description: z.string().min(1).optional(),
     coverImageUrl: z.string().url().optional(),
-    saleStatus: saleStatusSchema.optional(),
-    published: z.boolean(),
-    refundEntryEnabled: z.boolean(),
-    sessions: z.array(adminEventSessionDraftSchema),
+    id: z.string().min(1).optional(),
+    published: z.boolean().optional(),
+    sessions: z.array(adminEventSessionDraftSchema).min(1),
   })
   .strict();
 

@@ -1,14 +1,13 @@
 import { z } from 'zod';
 
 export const adminRoleSchema = z.enum([
-  'SUPER_ADMIN',
-  'EVENT_ADMIN',
-  'ORDER_ADMIN',
-  'REFUND_ADMIN',
+  'ADMIN',
+  'OPERATIONS',
 ]);
 
 export const adminSessionUserSchema = z
   .object({
+    email: z.string().email(),
     id: z.string().min(1),
     name: z.string().min(1),
     role: adminRoleSchema,
@@ -17,16 +16,14 @@ export const adminSessionUserSchema = z
 
 export const adminLoginRequestSchema = z
   .object({
-    username: z.string().min(1),
-    password: z.string().min(1),
+    email: z.string().email(),
+    password: z.string().min(8),
   })
   .strict();
 
 export const adminSessionSchema = z
   .object({
-    token: z.string().min(1),
     user: adminSessionUserSchema,
-    expiresAt: z.string().datetime(),
   })
   .strict();
 
