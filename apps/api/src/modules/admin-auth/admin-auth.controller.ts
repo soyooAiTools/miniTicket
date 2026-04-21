@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -58,6 +59,7 @@ export class AdminAuthController {
       httpOnly: true,
       maxAge: ADMIN_SESSION_TTL_MS,
       path: '/',
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
     });
 
@@ -70,9 +72,16 @@ export class AdminAuthController {
   @UseGuards(AdminSessionGuard)
   async logout(
     @CurrentAdmin() admin: { id: string },
+    @Req() request: { adminSessionId?: string },
     @Res({ passthrough: true }) res: any,
   ) {
-    await this.adminAuthService.logout(admin.id);
+    const sessionId = request.adminSessionId;
+
+    if (!sessionId) {
+      throw new BadRequestException('管理员登录已失效。');
+    }
+
+    await this.adminAuthService.logout(sessionId);
     res.clearCookie(ADMIN_SESSION_COOKIE_NAME, {
       path: '/',
     });

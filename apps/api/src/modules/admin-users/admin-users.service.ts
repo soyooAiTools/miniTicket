@@ -73,26 +73,34 @@ export class AdminUsersService {
       throw new ConflictException('邮箱已存在。');
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        enabled: true,
-        name: input.name.trim(),
-        passwordHash: hashPassword(input.password),
-        role: input.role,
-      },
-      select: {
-        createdAt: true,
-        email: true,
-        enabled: true,
-        id: true,
-        name: true,
-        role: true,
-        updatedAt: true,
-      },
-    });
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          enabled: true,
+          name: input.name.trim(),
+          passwordHash: hashPassword(input.password),
+          role: input.role,
+        },
+        select: {
+          createdAt: true,
+          email: true,
+          enabled: true,
+          id: true,
+          name: true,
+          role: true,
+          updatedAt: true,
+        },
+      });
 
-    return user as AdminUserListItem;
+      return user as AdminUserListItem;
+    } catch (error) {
+      if ((error as { code?: string } | null)?.code === 'P2002') {
+        throw new ConflictException('邮箱已存在。');
+      }
+
+      throw error;
+    }
   }
 
   async setEnabled(userId: string, enabled: boolean): Promise<AdminUserListItem> {

@@ -1,8 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { createHash, scryptSync } from 'node:crypto';
 
-import { AdminSessionGuard } from '../../common/auth/admin-session.guard';
+import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
+import { AdminSessionGuard } from '../../common/auth/admin-session.guard';
 
 function hashPassword(password: string, seed: string) {
   const salt = createHash('sha256')
@@ -81,6 +82,7 @@ describe('AdminAuthService', () => {
 
   it('returns a compact admin principal from the session guard', async () => {
     (prismaMock.adminSession.findFirst as jest.Mock).mockResolvedValue({
+      id: 'admin_session_001',
       user: {
         createdAt: new Date('2026-04-20T08:00:00.000Z'),
         email: 'ops@miniticket.local',
@@ -114,8 +116,10 @@ describe('AdminAuthService', () => {
     expect(request.admin).not.toHaveProperty('enabled');
     expect(request.admin).not.toHaveProperty('createdAt');
     expect(request.admin).not.toHaveProperty('updatedAt');
+    expect(request.adminSessionId).toBe('admin_session_001');
     expect(prismaMock.adminSession.findFirst).toHaveBeenCalledWith({
       select: {
+        id: true,
         user: {
           select: {
             email: true,
@@ -133,6 +137,96 @@ describe('AdminAuthService', () => {
         tokenHash: hashToken('session-token-123'),
       },
     });
+  });
+
+  it('deletes only the current session on logout', async () => {
+    const service = new AdminAuthService(prismaMock);
+
+    await service.logout('admin_session_001');
+
+    expect(prismaMock.adminSession.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: 'admin_session_001',
+      },
+    });
+  });
+
+  it('sets a secure login cookie in production', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const adminAuthServiceMock = {
+        login: jest.fn().mockResolvedValue({
+          sessionToken: 'session-token-123',
+          user: {
+            email: 'ops@miniticket.local',
+            id: 'seed-admin-ops',
+            name: 'Ops Lead',
+            role: 'OPERATIONS',
+          },
+        }),
+      } as never;
+
+      const controller = new AdminAuthController(adminAuthServiceMock);
+      const res = {
+        cookie: jest.fn(),
+      } as never;
+
+      await controller.login(
+        {
+          email: 'ops@miniticket.local',
+          password: 'Ops12345!',
+        },
+        res,
+      );
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        'mini_ticket_admin_session',
+        'session-token-123',
+        {
+          httpOnly: true,
+          maxAge: expect.any(Number),
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+        },
+      );
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  it('deletes only the current session on logout', async () => {
+    const adminAuthServiceMock = {
+      logout: jest.fn().mockResolvedValue(undefined),
+    } as never;
+
+    const controller = new AdminAuthController(adminAuthServiceMock);
+    const request = {
+      adminSessionId: 'admin_session_001',
+    };
+    const res = {
+      clearCookie: jest.fn(),
+    } as never;
+
+    await controller.logout(
+      {
+        id: 'seed-admin-ops',
+      },
+      request,
+      res,
+    );
+
+    expect(adminAuthServiceMock.logout).toHaveBeenCalledWith(
+      'admin_session_001',
+    );
+    expect(res.clearCookie).toHaveBeenCalledWith(
+      'mini_ticket_admin_session',
+      {
+        path: '/',
+      },
+    );
   });
 
   it('rejects disabled users', async () => {
@@ -177,17 +271,5 @@ describe('AdminAuthService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
 
     expect(prismaMock.adminSession.create).not.toHaveBeenCalled();
-  });
-
-  it('clears all admin sessions for the signed-in user', async () => {
-    const service = new AdminAuthService(prismaMock);
-
-    await service.logout('seed-admin-ops');
-
-    expect(prismaMock.adminSession.deleteMany).toHaveBeenCalledWith({
-      where: {
-        userId: 'seed-admin-ops',
-      },
-    });
   });
 });

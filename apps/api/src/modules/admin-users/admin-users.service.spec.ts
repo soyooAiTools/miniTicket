@@ -133,6 +133,24 @@ describe('AdminUsersService', () => {
     });
   });
 
+  it('maps unique constraint errors to ConflictException', async () => {
+    (prismaMock.user.findFirst as jest.Mock).mockResolvedValue(null);
+    (prismaMock.user.create as jest.Mock).mockRejectedValue({
+      code: 'P2002',
+    });
+
+    const service = new AdminUsersService(prismaMock);
+
+    await expect(
+      service.createUser({
+        email: 'new@miniticket.local',
+        name: 'New Admin',
+        password: 'Admin123!',
+        role: 'ADMIN',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
   it('rejects duplicate emails', async () => {
     (prismaMock.user.findFirst as jest.Mock).mockResolvedValue({
       id: 'existing-user',

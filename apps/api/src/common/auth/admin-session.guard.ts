@@ -26,6 +26,7 @@ export class AdminSessionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<{
       admin?: CurrentAdminPrincipal;
+      adminSessionId?: string;
       headers?: Record<string, string | string[] | undefined>;
     }>();
 
@@ -35,11 +36,12 @@ export class AdminSessionGuard implements CanActivate {
     );
 
     if (!sessionToken) {
-      throw new UnauthorizedException('管理员登录已失效。');
+      throw new UnauthorizedException('admin session expired');
     }
 
     const session = await this.prisma.adminSession.findFirst({
       select: {
+        id: true,
         user: {
           select: {
             email: true,
@@ -59,9 +61,10 @@ export class AdminSessionGuard implements CanActivate {
     });
 
     if (!session?.user?.enabled || !isAdminRole(session.user.role)) {
-      throw new UnauthorizedException('管理员登录已失效。');
+      throw new UnauthorizedException('admin session expired');
     }
 
+    request.adminSessionId = session.id;
     request.admin = {
       email: session.user.email,
       id: session.user.id,

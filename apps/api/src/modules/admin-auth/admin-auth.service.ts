@@ -1,14 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { type UserRole } from '@prisma/client';
+import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
-import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  ADMIN_SESSION_TTL_MS,
-  createSessionToken,
-  hashSessionToken,
-} from '../../common/auth/admin-cookie';
+import { ADMIN_SESSION_TTL_MS, createSessionToken, hashSessionToken } from '../../common/auth/admin-cookie';
 import { type CurrentAdminPrincipal } from '../../common/auth/current-admin.decorator';
+import { PrismaService } from '../../common/prisma/prisma.service';
 
 type AdminAuthLoginInput = {
   email: string;
@@ -76,10 +72,10 @@ export class AdminAuthService {
     };
   }
 
-  async logout(userId: string) {
+  async logout(sessionId: string) {
     await this.prisma.adminSession.deleteMany({
       where: {
-        userId,
+        id: sessionId,
       },
     });
   }
