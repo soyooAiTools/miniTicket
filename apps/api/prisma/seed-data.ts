@@ -64,7 +64,7 @@ export const ticketingDemoSeed = {
       name: 'Standard Standing',
       price: 399,
       purchaseLimit: 4,
-      refundDeadlineAt: undefined,
+      refundDeadlineAt: null,
       refundable: false,
       requiresRealName: true,
       sessionId: 'seed-session-beta-night-1',

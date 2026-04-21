@@ -81,6 +81,15 @@ CREATE INDEX "OrderNote_orderId_createdAt_idx" ON "OrderNote"("orderId", "create
 -- CreateIndex
 CREATE INDEX "OrderFlag_orderId_createdAt_idx" ON "OrderFlag"("orderId", "createdAt");
 
+-- CreateIndex
+CREATE INDEX "RefundRequest_status_requestedAt_idx" ON "RefundRequest"("status", "requestedAt");
+
+-- CreateIndex
+CREATE INDEX "RefundRequest_reviewedByUserId_idx" ON "RefundRequest"("reviewedByUserId");
+
+-- CreateIndex
+CREATE INDEX "RefundRequest_processedByUserId_idx" ON "RefundRequest"("processedByUserId");
+
 -- AddForeignKey
 ALTER TABLE "AdminSession" ADD CONSTRAINT "AdminSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -98,3 +107,9 @@ ALTER TABLE "OrderFlag" ADD CONSTRAINT "OrderFlag_orderId_fkey" FOREIGN KEY ("or
 
 -- AddForeignKey
 ALTER TABLE "OrderFlag" ADD CONSTRAINT "OrderFlag_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RefundRequest" ADD CONSTRAINT "RefundRequest_reviewedByUserId_fkey" FOREIGN KEY ("reviewedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RefundRequest" ADD CONSTRAINT "RefundRequest_processedByUserId_fkey" FOREIGN KEY ("processedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

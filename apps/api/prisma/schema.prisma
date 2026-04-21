@@ -78,6 +78,8 @@ model User {
   auditLogs     AdminAuditLog[]
   orderFlags    OrderFlag[]
   orderNotes    OrderNote[]
+  reviewedRefundRequests RefundRequest[] @relation("RefundReviewedBy")
+  processedRefundRequests RefundRequest[] @relation("RefundProcessedBy")
 }
 
 model AdminSession {
@@ -303,6 +305,11 @@ model RefundRequest {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   order             Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewedBy        User?        @relation("RefundReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  processedBy       User?        @relation("RefundProcessedBy", fields: [processedByUserId], references: [id], onDelete: SetNull)
 
   @@index([orderId, requestedAt])
+  @@index([status, requestedAt])
+  @@index([reviewedByUserId])
+  @@index([processedByUserId])
 }

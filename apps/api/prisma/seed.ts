@@ -1,10 +1,15 @@
-import { createHash } from 'node:crypto';
+import { createHash, scryptSync } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 
 import { adminUserSeed, ticketingDemoSeed } from './seed-data';
 
-function hashPassword(password: string) {
-  return `sha256:${createHash('sha256').update(password).digest('hex')}`;
+function hashPassword(password: string, seed: string) {
+  const salt = createHash('sha256')
+    .update(`admin-seed:${seed}`)
+    .digest('hex')
+    .slice(0, 32);
+  const hash = scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
 }
 
 async function main() {
@@ -21,13 +26,13 @@ async function main() {
           enabled: true,
           id: user.id,
           name: user.name,
-          passwordHash: hashPassword(user.password),
+          passwordHash: hashPassword(user.password, user.id),
           role: user.role,
         },
         update: {
           enabled: true,
           name: user.name,
-          passwordHash: hashPassword(user.password),
+          passwordHash: hashPassword(user.password, user.id),
           role: user.role,
         },
       });
