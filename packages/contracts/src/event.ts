@@ -24,6 +24,11 @@ export const ticketTierSummarySchema = z
     price: z.number().int().nonnegative(),
     inventory: z.number().int().nonnegative(),
     ticketType: z.enum(['E_TICKET', 'PAPER_TICKET']),
+    purchaseLimit: z.number().int().positive().optional(),
+    refundable: z.boolean().optional(),
+    refundDeadlineAt: z.string().datetime().optional(),
+    requiresRealName: z.boolean().optional(),
+    sortOrder: z.number().int().nonnegative().optional(),
   })
   .strict();
 
