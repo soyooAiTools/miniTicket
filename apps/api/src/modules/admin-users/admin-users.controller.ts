@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { AdminSessionGuard } from '../../common/auth/admin-session.guard';
+import { CurrentAdmin } from '../../common/auth/current-admin.decorator';
 
 import { AdminUsersService } from './admin-users.service';
 
@@ -80,13 +81,20 @@ export class AdminUsersController {
   }
 
   @Post()
-  createUser(@Body() body: unknown) {
-    return this.adminUsersService.createUser(parseCreateAdminUserBody(body));
+  createUser(@CurrentAdmin() admin: { id: string }, @Body() body: unknown) {
+    return this.adminUsersService.createUser(
+      parseCreateAdminUserBody(body),
+      admin.id,
+    );
   }
 
   @Patch(':userId/enabled')
-  setEnabled(@Param('userId') userId: string, @Body() body: unknown) {
+  setEnabled(
+    @CurrentAdmin() admin: { id: string },
+    @Param('userId') userId: string,
+    @Body() body: unknown,
+  ) {
     const payload = parseSetEnabledBody(body);
-    return this.adminUsersService.setEnabled(userId, payload.enabled);
+    return this.adminUsersService.setEnabled(userId, payload.enabled, admin.id);
   }
 }

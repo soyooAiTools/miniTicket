@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes, scryptSync } from 'node:crypto';
 
+import { AdminAuditService } from '../../common/admin/admin-audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 type AdminUserRole = 'ADMIN' | 'OPERATIONS';
@@ -61,7 +62,10 @@ export class AdminUsersService {
     return users as AdminUserListItem[];
   }
 
-  async createUser(input: CreateAdminUserInput): Promise<AdminUserListItem> {
+  async createUser(
+    input: CreateAdminUserInput,
+    actorUserId: string,
+  ): Promise<AdminUserListItem> {
     const email = normalizeEmail(input.email);
     const existing = await this.prisma.user.findFirst({
       where: {
@@ -93,6 +97,17 @@ export class AdminUsersService {
         },
       });
 
+      await new AdminAuditService(this.prisma).recordAction({
+        action: 'ADMIN_USER_CREATED',
+        actorUserId,
+        payload: {
+          email: user.email,
+          role: user.role,
+        },
+        targetId: user.id,
+        targetType: 'ADMIN_USER',
+      });
+
       return user as AdminUserListItem;
     } catch (error) {
       if ((error as { code?: string } | null)?.code === 'P2002') {
@@ -103,7 +118,11 @@ export class AdminUsersService {
     }
   }
 
-  async setEnabled(userId: string, enabled: boolean): Promise<AdminUserListItem> {
+  async setEnabled(
+    userId: string,
+    enabled: boolean,
+    actorUserId: string,
+  ): Promise<AdminUserListItem> {
     const result = await this.prisma.user.updateMany({
       data: {
         enabled,
@@ -141,6 +160,16 @@ export class AdminUsersService {
     if (!user) {
       throw new NotFoundException('后台账号不存在。');
     }
+
+    await new AdminAuditService(this.prisma).recordAction({
+      action: enabled ? 'ADMIN_USER_ENABLED' : 'ADMIN_USER_DISABLED',
+      actorUserId,
+      payload: {
+        enabled,
+      },
+      targetId: user.id,
+      targetType: 'ADMIN_USER',
+    });
 
     return user as AdminUserListItem;
   }

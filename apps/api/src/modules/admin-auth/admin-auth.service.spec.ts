@@ -22,6 +22,9 @@ function hashToken(token: string) {
 
 describe('AdminAuthService', () => {
   const prismaMock = {
+    adminAuditLog: {
+      create: jest.fn(),
+    },
     adminSession: {
       create: jest.fn(),
       deleteMany: jest.fn(),
@@ -55,6 +58,9 @@ describe('AdminAuthService', () => {
     (prismaMock.adminSession.create as jest.Mock).mockResolvedValue({
       id: 'admin_session_001',
     });
+    (prismaMock.adminAuditLog.create as jest.Mock).mockResolvedValue({
+      id: 'audit_001',
+    });
 
     const service = new AdminAuthService(prismaMock);
     const result = await service.login({
@@ -75,6 +81,17 @@ describe('AdminAuthService', () => {
       data: {
         expiresAt: new Date('2026-04-21T20:00:00.000Z'),
         tokenHash: hashToken(result.sessionToken),
+        userId: 'seed-admin-ops',
+      },
+    });
+    expect(prismaMock.adminAuditLog.create).toHaveBeenCalledWith({
+      data: {
+        action: 'ADMIN_LOGIN',
+        payload: {
+          sessionId: 'admin_session_001',
+        },
+        targetId: 'admin_session_001',
+        targetType: 'ADMIN_SESSION',
         userId: 'seed-admin-ops',
       },
     });

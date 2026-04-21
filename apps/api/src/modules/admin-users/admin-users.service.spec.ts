@@ -4,6 +4,9 @@ import { AdminUsersService } from './admin-users.service';
 
 describe('AdminUsersService', () => {
   const prismaMock = {
+    adminAuditLog: {
+      create: jest.fn(),
+    },
     user: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -93,6 +96,9 @@ describe('AdminUsersService', () => {
       role: 'OPERATIONS',
       updatedAt: new Date('2026-04-21T08:00:00.000Z'),
     });
+    (prismaMock.adminAuditLog.create as jest.Mock).mockResolvedValue({
+      id: 'audit_001',
+    });
 
     const service = new AdminUsersService(prismaMock);
     const result = await service.createUser({
@@ -100,7 +106,7 @@ describe('AdminUsersService', () => {
       name: 'Ops B',
       password: 'OpsOps123!',
       role: 'OPERATIONS',
-    });
+    }, 'seed-admin-ops');
 
     expect(result).toMatchObject({
       email: 'ops2@miniticket.local',
@@ -131,6 +137,18 @@ describe('AdminUsersService', () => {
         updatedAt: true,
       },
     });
+    expect(prismaMock.adminAuditLog.create).toHaveBeenCalledWith({
+      data: {
+        action: 'ADMIN_USER_CREATED',
+        payload: {
+          email: 'ops2@miniticket.local',
+          role: 'OPERATIONS',
+        },
+        targetId: 'user_ops_002',
+        targetType: 'ADMIN_USER',
+        userId: 'seed-admin-ops',
+      },
+    });
   });
 
   it('maps unique constraint errors to ConflictException', async () => {
@@ -147,7 +165,7 @@ describe('AdminUsersService', () => {
         name: 'New Admin',
         password: 'Admin123!',
         role: 'ADMIN',
-      }),
+      }, 'seed-admin-ops'),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
@@ -183,9 +201,16 @@ describe('AdminUsersService', () => {
       role: 'OPERATIONS',
       updatedAt: new Date('2026-04-21T09:00:00.000Z'),
     });
+    (prismaMock.adminAuditLog.create as jest.Mock).mockResolvedValue({
+      id: 'audit_002',
+    });
 
     const service = new AdminUsersService(prismaMock);
-    const result = await service.setEnabled('user_ops_002', false);
+    const result = await service.setEnabled(
+      'user_ops_002',
+      false,
+      'seed-admin-ops',
+    );
 
     expect(result).toEqual({
       createdAt: new Date('2026-04-21T08:00:00.000Z'),
@@ -224,6 +249,17 @@ describe('AdminUsersService', () => {
         },
       },
     });
+    expect(prismaMock.adminAuditLog.create).toHaveBeenCalledWith({
+      data: {
+        action: 'ADMIN_USER_DISABLED',
+        payload: {
+          enabled: false,
+        },
+        targetId: 'user_ops_002',
+        targetType: 'ADMIN_USER',
+        userId: 'seed-admin-ops',
+      },
+    });
   });
 
   it('rejects non-admin users when toggling enabled state', async () => {
@@ -233,9 +269,9 @@ describe('AdminUsersService', () => {
 
     const service = new AdminUsersService(prismaMock);
 
-    await expect(service.setEnabled('viewer_001', true)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.setEnabled('viewer_001', true, 'seed-admin-ops'),
+    ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(prismaMock.user.findFirst).not.toHaveBeenCalled();
     expect(prismaMock.user.updateMany).toHaveBeenCalledWith({
