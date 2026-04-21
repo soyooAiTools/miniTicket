@@ -21,6 +21,15 @@ const publishedEventSelect = {
   venueName: true,
 } as const;
 
+const ticketTierOrderBy = [
+  {
+    sortOrder: 'asc' as const,
+  },
+  {
+    price: 'asc' as const,
+  },
+];
+
 const eventDetailSelect = {
   ...publishedEventSelect,
   sessions: {
@@ -35,20 +44,36 @@ const eventDetailSelect = {
       saleStartsAt: true,
       startsAt: true,
       ticketTiers: {
-        orderBy: {
-          price: 'asc' as const,
-        },
+        orderBy: ticketTierOrderBy,
         select: {
           id: true,
           inventory: true,
           name: true,
           price: true,
+          purchaseLimit: true,
+          refundable: true,
+          refundDeadlineAt: true,
+          requiresRealName: true,
+          sortOrder: true,
           ticketType: true,
         },
       },
     },
   },
 } as const;
+
+type PrismaEventTier = {
+  id: string;
+  inventory: number;
+  name: string;
+  price: number;
+  purchaseLimit: number;
+  refundable: boolean;
+  refundDeadlineAt: Date | string | null;
+  requiresRealName: boolean;
+  sortOrder: number;
+  ticketType: 'E_TICKET' | 'PAPER_TICKET';
+};
 
 type PrismaEventSession = {
   endsAt: Date | string | null;
@@ -57,13 +82,7 @@ type PrismaEventSession = {
   saleEndsAt: Date | string | null;
   saleStartsAt: Date | string | null;
   startsAt: Date | string;
-  ticketTiers: Array<{
-    id: string;
-    inventory: number;
-    name: string;
-    price: number;
-    ticketType: 'E_TICKET' | 'PAPER_TICKET';
-  }>;
+  ticketTiers: PrismaEventTier[];
 };
 
 type PrismaCatalogEvent = {
@@ -104,7 +123,18 @@ function normalizeEventSession(session: PrismaEventSession) {
     saleEndsAt: normalizeDate(session.saleEndsAt),
     saleStartsAt: normalizeDate(session.saleStartsAt),
     startsAt: normalizeRequiredDate(session.startsAt),
-    ticketTiers: session.ticketTiers,
+    ticketTiers: session.ticketTiers.map((ticketTier) => ({
+      id: ticketTier.id,
+      inventory: ticketTier.inventory,
+      name: ticketTier.name,
+      price: ticketTier.price,
+      purchaseLimit: ticketTier.purchaseLimit,
+      refundable: ticketTier.refundable,
+      refundDeadlineAt: normalizeDate(ticketTier.refundDeadlineAt),
+      requiresRealName: ticketTier.requiresRealName,
+      sortOrder: ticketTier.sortOrder,
+      ticketType: ticketTier.ticketType,
+    })),
   };
 }
 

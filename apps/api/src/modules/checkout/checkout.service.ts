@@ -64,6 +64,7 @@ export class CheckoutService {
         select: {
           id: true,
           price: true,
+          purchaseLimit: true,
           ticketType: true,
         },
         where: { id: input.tierId },
@@ -75,6 +76,12 @@ export class CheckoutService {
 
       if (tier.ticketType !== input.ticketType) {
         throw new BadRequestException('ticketType does not match tier.');
+      }
+
+      if (input.quantity > tier.purchaseLimit) {
+        throw new BadRequestException(
+          'quantity exceeds purchase limit for this tier.',
+        );
       }
 
       const viewers = await tx.viewer.findMany({

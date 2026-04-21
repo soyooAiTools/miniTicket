@@ -5,6 +5,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
 import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
+import { AdminEventsModule } from './modules/admin-events/admin-events.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
@@ -30,6 +31,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     AuthModule,
     AdminAuthModule,
     AdminDashboardModule,
+    AdminEventsModule,
     AdminUsersModule,
     ViewersModule,
     CatalogModule,

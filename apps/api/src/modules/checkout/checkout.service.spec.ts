@@ -59,6 +59,7 @@ describe('CheckoutService', () => {
     txPrismaMock.ticketTier.findUnique.mockResolvedValue({
       id: 'tier_vip',
       price: 880,
+      purchaseLimit: 4,
       ticketType: 'E_TICKET',
     });
     txPrismaMock.viewer.findMany.mockResolvedValue([
@@ -95,6 +96,7 @@ describe('CheckoutService', () => {
       select: {
         id: true,
         price: true,
+        purchaseLimit: true,
         ticketType: true,
       },
       where: { id: 'tier_vip' },
@@ -305,6 +307,7 @@ describe('CheckoutService', () => {
     txPrismaMock.ticketTier.findUnique.mockResolvedValue({
       id: 'tier_vip',
       price: 880,
+      purchaseLimit: 4,
       ticketType: 'E_TICKET',
     });
     txPrismaMock.viewer.findMany.mockResolvedValue([{ id: 'viewer_1' }]);
@@ -331,6 +334,41 @@ describe('CheckoutService', () => {
         'viewerIds must belong to the submitting user.',
       ),
     );
+    expect(txPrismaMock.order.create).not.toHaveBeenCalled();
+    expect(txPrismaMock.orderItem.createMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects quantities above the tier purchase limit before loading viewers', async () => {
+    txPrismaMock.ticketTier.findUnique.mockResolvedValue({
+      id: 'tier_vip',
+      price: 880,
+      purchaseLimit: 4,
+      ticketType: 'E_TICKET',
+    });
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        CheckoutService,
+        { provide: PrismaService, useValue: prismaMock },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(CheckoutService);
+
+    await expect(
+      service.createDraftOrder({
+        userId: 'user_123',
+        tierId: 'tier_vip',
+        viewerIds: ['viewer_1', 'viewer_2', 'viewer_3', 'viewer_4', 'viewer_5'],
+        quantity: 5,
+        ticketType: 'E_TICKET',
+      }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        'quantity exceeds purchase limit for this tier.',
+      ),
+    );
+    expect(txPrismaMock.viewer.findMany).not.toHaveBeenCalled();
     expect(txPrismaMock.order.create).not.toHaveBeenCalled();
     expect(txPrismaMock.orderItem.createMany).not.toHaveBeenCalled();
   });
