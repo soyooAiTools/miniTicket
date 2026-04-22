@@ -55,11 +55,11 @@ describe('RefundsService', () => {
     (upstreamGatewayMock.submitRefund as jest.Mock).mockReset();
     (prismaMock.$transaction as jest.Mock).mockImplementation(
       async (callback: (tx: typeof txPrismaMock) => Promise<unknown>) =>
-        callback(txPrismaMock),
+      callback(txPrismaMock),
     );
   });
 
-  it('creates a persisted refund request, submits it upstream, and marks the order as refund processing', async () => {
+  it('keeps a customer refund request in REVIEWING without submitting upstream', async () => {
     txPrismaMock.order.findUnique.mockResolvedValue({
       id: 'order_123',
       status: ORDER_STATUS.TICKET_ISSUED,
@@ -67,9 +67,10 @@ describe('RefundsService', () => {
       userId: 'cust_123',
     });
     txPrismaMock.refundRequest.create.mockResolvedValue({
+      refundAmount: 80000,
       refundNo: 'RFD-1713340800000-ab12cd34',
       serviceFee: 20000,
-      refundAmount: 80000,
+      status: 'REVIEWING',
     });
     txPrismaMock.order.updateMany.mockResolvedValue({ count: 1 });
     txPrismaMock.refundRequest.updateMany.mockResolvedValue({ count: 1 });
@@ -94,16 +95,21 @@ describe('RefundsService', () => {
       daysBeforeStart: 2,
     });
 
-    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
-    expect(txPrismaMock.order.findUnique).toHaveBeenCalledWith({
-      select: {
-        id: true,
-        status: true,
-        totalAmount: true,
-        userId: true,
+    expect(txPrismaMock.refundRequest.create).toHaveBeenCalledWith({
+      data: {
+        orderId: 'order_123',
+        reason: 'USER_IDENTITY_ERROR',
+        refundAmount: 80000,
+        refundNo: expect.stringMatching(/^RFD-\d+-[a-z0-9]+$/),
+        requestedAmount: 100000,
+        serviceFee: 20000,
+        status: 'REVIEWING',
       },
-      where: {
-        id: 'order_123',
+      select: {
+        refundAmount: true,
+        refundNo: true,
+        serviceFee: true,
+        status: true,
       },
     });
     expect(txPrismaMock.order.updateMany).toHaveBeenCalledWith({
@@ -122,54 +128,17 @@ describe('RefundsService', () => {
         },
       },
     });
-    expect(txPrismaMock.refundRequest.create).toHaveBeenCalledWith({
-      data: {
-        orderId: 'order_123',
-        reason: 'USER_IDENTITY_ERROR',
-        refundAmount: 80000,
-        refundNo: expect.stringMatching(/^RFD-\d+-[a-z0-9]+$/),
-        requestedAmount: 100000,
-        serviceFee: 20000,
-        status: 'REVIEWING',
-      },
-      select: {
-        refundAmount: true,
-        refundNo: true,
-        serviceFee: true,
-      },
-    });
-    expect(upstreamGatewayMock.submitRefund).toHaveBeenCalledWith({
-      amount: 80000,
-      orderId: 'order_123',
-      refundNo: expect.stringMatching(/^RFD-\d+-[a-z0-9]+$/),
-    });
-    expect(txPrismaMock.refundRequest.updateMany).toHaveBeenCalledWith({
-      data: {
-        status: 'PROCESSING',
-      },
-      where: {
-        refundNo: expect.stringMatching(/^RFD-\d+-[a-z0-9]+$/),
-        status: 'REVIEWING',
-      },
-    });
-    expect(txPrismaMock.order.updateMany).toHaveBeenNthCalledWith(2, {
-      data: {
-        status: ORDER_STATUS.REFUND_PROCESSING,
-      },
-      where: {
-        id: 'order_123',
-        status: ORDER_STATUS.REFUND_REVIEWING,
-      },
-    });
+    expect(upstreamGatewayMock.submitRefund).not.toHaveBeenCalled();
+    expect(txPrismaMock.refundRequest.updateMany).not.toHaveBeenCalled();
     expect(result).toEqual({
-      externalRef: 'vendor_refund_1',
       refundAmount: 80000,
       refundNo: expect.stringMatching(/^RFD-\d+-[a-z0-9]+$/),
       serviceFee: 20000,
+      status: 'REVIEWING',
     });
   });
 
-  it('retries upstream submission for an existing reviewing refund request', async () => {
+  it('returns an existing reviewing refund request without creating a new one', async () => {
     txPrismaMock.order.findUnique.mockResolvedValue({
       id: 'order_123',
       status: ORDER_STATUS.REFUND_REVIEWING,
@@ -180,11 +149,7 @@ describe('RefundsService', () => {
       refundAmount: 80000,
       refundNo: 'RFD-1713340800000-ab12cd34',
       serviceFee: 20000,
-    });
-    txPrismaMock.order.updateMany.mockResolvedValue({ count: 1 });
-    txPrismaMock.refundRequest.updateMany.mockResolvedValue({ count: 1 });
-    (upstreamGatewayMock.submitRefund as jest.Mock).mockResolvedValue({
-      externalRef: 'vendor_refund_retry_1',
+      status: 'REVIEWING',
     });
 
     const moduleRef = await Test.createTestingModule({
@@ -213,136 +178,20 @@ describe('RefundsService', () => {
         refundAmount: true,
         refundNo: true,
         serviceFee: true,
+        status: true,
       },
       where: {
         orderId: 'order_123',
         status: 'REVIEWING',
       },
-    });
-    expect(upstreamGatewayMock.submitRefund).toHaveBeenCalledWith({
-      amount: 80000,
-      orderId: 'order_123',
-      refundNo: 'RFD-1713340800000-ab12cd34',
     });
     expect(result).toEqual({
-      externalRef: 'vendor_refund_retry_1',
       refundAmount: 80000,
       refundNo: 'RFD-1713340800000-ab12cd34',
       serviceFee: 20000,
+      status: 'REVIEWING',
     });
-  });
-
-  it('does not regress a refunded order back to refund processing after upstream submission succeeds', async () => {
-    txPrismaMock.order.findUnique
-      .mockResolvedValueOnce({
-        id: 'order_123',
-        status: ORDER_STATUS.TICKET_ISSUED,
-        totalAmount: 100000,
-        userId: 'cust_123',
-      })
-      .mockResolvedValueOnce({
-        status: ORDER_STATUS.REFUNDED,
-      });
-    txPrismaMock.refundRequest.create.mockResolvedValue({
-      refundNo: 'RFD-1713340800000-ab12cd34',
-      serviceFee: 20000,
-      refundAmount: 80000,
-    });
-    txPrismaMock.refundRequest.updateMany.mockResolvedValueOnce({ count: 0 });
-    txPrismaMock.refundRequest.findUnique.mockResolvedValueOnce({
-      orderId: 'order_123',
-      refundAmount: 80000,
-      refundNo: 'RFD-1713340800000-ab12cd34',
-      status: 'COMPLETED',
-    });
-    txPrismaMock.order.updateMany
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 0 });
-    (upstreamGatewayMock.submitRefund as jest.Mock).mockResolvedValue({
-      externalRef: 'vendor_refund_1',
-    });
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        RefundsService,
-        { provide: PrismaService, useValue: prismaMock },
-        { provide: UpstreamTicketingGateway, useValue: upstreamGatewayMock },
-      ],
-    }).compile();
-
-    const service = moduleRef.get(RefundsService);
-
-    await expect(
-      service.requestRefund({
-        customerId: 'cust_123',
-        orderId: 'order_123',
-        reasonCode: 'USER_IDENTITY_ERROR',
-        daysBeforeStart: 2,
-      }),
-    ).resolves.toEqual({
-      externalRef: 'vendor_refund_1',
-      refundAmount: 80000,
-      refundNo: 'RFD-1713340800000-ab12cd34',
-      serviceFee: 20000,
-    });
-
-    expect(txPrismaMock.order.updateMany).toHaveBeenNthCalledWith(2, {
-      data: {
-        status: ORDER_STATUS.REFUND_PROCESSING,
-      },
-      where: {
-        id: 'order_123',
-        status: ORDER_STATUS.REFUND_REVIEWING,
-      },
-    });
-    expect(txPrismaMock.refundRequest.updateMany).toHaveBeenCalledWith({
-      data: {
-        status: 'PROCESSING',
-      },
-      where: {
-        refundNo: 'RFD-1713340800000-ab12cd34',
-        status: 'REVIEWING',
-      },
-    });
-    expect(txPrismaMock.order.update).not.toHaveBeenCalled();
-  });
-
-  it('keeps a reviewing refund request retryable when upstream submission fails', async () => {
-    txPrismaMock.order.findUnique.mockResolvedValue({
-      id: 'order_123',
-      status: ORDER_STATUS.TICKET_ISSUED,
-      totalAmount: 100000,
-      userId: 'cust_123',
-    });
-    txPrismaMock.refundRequest.create.mockResolvedValue({
-      refundNo: 'RFD-1713340800000-ab12cd34',
-      serviceFee: 20000,
-      refundAmount: 80000,
-    });
-    txPrismaMock.order.updateMany.mockResolvedValue({ count: 1 });
-    (upstreamGatewayMock.submitRefund as jest.Mock).mockRejectedValue(
-      new BadRequestException('vendor unavailable'),
-    );
-
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        RefundsService,
-        { provide: PrismaService, useValue: prismaMock },
-        { provide: UpstreamTicketingGateway, useValue: upstreamGatewayMock },
-      ],
-    }).compile();
-
-    const service = moduleRef.get(RefundsService);
-
-    await expect(
-      service.requestRefund({
-        customerId: 'cust_123',
-        orderId: 'order_123',
-        reasonCode: 'USER_IDENTITY_ERROR',
-        daysBeforeStart: 2,
-      }),
-    ).rejects.toThrow(new BadRequestException('vendor unavailable'));
-
-    expect(prismaMock.order.update).not.toHaveBeenCalled();
+    expect(upstreamGatewayMock.submitRefund).not.toHaveBeenCalled();
   });
 
   it('rejects a refund request when the order does not exist', async () => {

@@ -213,6 +213,7 @@ export class RefundsService {
             refundAmount: true,
             refundNo: true,
             serviceFee: true,
+            status: true,
           },
           where: {
             orderId: order.id,
@@ -293,95 +294,14 @@ export class RefundsService {
           refundAmount: true,
           refundNo: true,
           serviceFee: true,
+          status: true,
         },
       });
 
       return refundRequest;
     });
 
-    const upstreamSubmission = await this.upstreamTicketingGateway.submitRefund({
-      amount: refundRequest.refundAmount,
-      orderId: input.orderId,
-      refundNo: refundRequest.refundNo,
-    });
-
-    const refundTransitionResult = await this.prisma.refundRequest.updateMany({
-      data: {
-        status: 'PROCESSING',
-      },
-      where: {
-        refundNo: refundRequest.refundNo,
-        status: 'REVIEWING',
-      },
-    });
-
-    if (refundTransitionResult.count === 0) {
-      const currentRefundRequest = await this.prisma.refundRequest.findUnique({
-        select: {
-          orderId: true,
-          refundAmount: true,
-          refundNo: true,
-          status: true,
-        },
-        where: {
-          refundNo: refundRequest.refundNo,
-        },
-      });
-
-      if (!currentRefundRequest) {
-        throw new BadRequestException('refundNo does not exist.');
-      }
-
-      this.assertVendorRefundMatches(currentRefundRequest, {
-        amount: refundRequest.refundAmount,
-        orderId: input.orderId,
-        refundNo: refundRequest.refundNo,
-      });
-
-      if (
-        currentRefundRequest.status !== 'PROCESSING' &&
-        currentRefundRequest.status !== 'COMPLETED'
-      ) {
-        throw new BadRequestException(
-          'order refund request state changed unexpectedly.',
-        );
-      }
-    }
-
-    const transitionResult = await this.prisma.order.updateMany({
-      data: {
-        status: ORDER_STATUS.REFUND_PROCESSING,
-      },
-      where: {
-        id: input.orderId,
-        status: ORDER_STATUS.REFUND_REVIEWING,
-      },
-    });
-
-    if (transitionResult.count === 0) {
-      const currentOrder = await this.prisma.order.findUnique({
-        select: {
-          status: true,
-        },
-        where: {
-          id: input.orderId,
-        },
-      });
-
-      if (
-        currentOrder?.status !== ORDER_STATUS.REFUND_PROCESSING &&
-        currentOrder?.status !== ORDER_STATUS.REFUNDED
-      ) {
-        throw new BadRequestException(
-          'order refund request state changed unexpectedly.',
-        );
-      }
-    }
-
-    return {
-      ...refundRequest,
-      externalRef: upstreamSubmission.externalRef,
-    };
+    return refundRequest;
   }
 
   async recordVendorRefund(input: RecordVendorRefundInput) {
