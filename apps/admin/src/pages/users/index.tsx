@@ -187,7 +187,7 @@ export function UsersPage() {
                 { type: 'email', message: '请输入有效的邮箱地址' },
               ]}
             >
-              <Input placeholder='admin@example.com' />
+              <Input placeholder='请输入邮箱地址' />
             </Form.Item>
 
             <Form.Item

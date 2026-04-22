@@ -63,7 +63,7 @@ export function AdminLayout() {
             管理后台
           </Typography.Text>
           <Typography.Title className='admin-shell__brand-title' level={4}>
-            Mini Ticket
+            迷你票务后台
           </Typography.Title>
           <Typography.Text className='admin-shell__brand-subtitle'>
             轻量运营工作台

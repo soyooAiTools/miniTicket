@@ -97,7 +97,7 @@ export function AdminLoginPage() {
               { type: 'email', message: '请输入有效的邮箱地址' },
             ]}
           >
-            <Input autoComplete='email' placeholder='admin@example.com' />
+            <Input autoComplete='email' placeholder='请输入管理员邮箱' />
           </Form.Item>
 
           <Form.Item
