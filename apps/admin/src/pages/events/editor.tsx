@@ -228,6 +228,7 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
   const [published, setPublished] = useState(false);
   const [banner, setBanner] = useState<string>();
   const [error, setError] = useState<string>();
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -275,7 +276,6 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
             : '无法加载活动详情。',
         );
         setPublished(false);
-        form.setFieldsValue(createDefaultValues());
       } finally {
         if (active) {
           setLoading(false);
@@ -286,7 +286,7 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
     return () => {
       active = false;
     };
-  }, [eventId, form, mode]);
+  }, [eventId, form, mode, reloadVersion]);
 
   async function submitAction(action: 'save' | 'publish' | 'unpublish') {
     setSavingAction(action);
@@ -338,6 +338,11 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
     }
   }
 
+  function retryLoad() {
+    setError(undefined);
+    setReloadVersion((value) => value + 1);
+  }
+
   return (
     <Space
       direction='vertical'
@@ -362,7 +367,20 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
         </Space>
       </div>
 
-      {error ? <Alert message={error} showIcon type='error' /> : null}
+      {error ? (
+        <Alert
+          action={
+            mode === 'edit' ? (
+              <Button onClick={retryLoad} type='link'>
+                重试加载
+              </Button>
+            ) : null
+          }
+          message={error}
+          showIcon
+          type='error'
+        />
+      ) : null}
       {banner ? <Alert message={banner} showIcon type='success' /> : null}
       <Alert
         message='保存顺序'
@@ -371,7 +389,7 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
         type='info'
       />
 
-      {mode === 'create' || !loading ? (
+      {mode === 'create' || (!loading && !error) ? (
         <Form
           form={form}
           initialValues={createDefaultValues()}

@@ -64,6 +64,29 @@ function buildEditorDetail(overrides: Partial<EditorDetailFixture> = {}): Editor
 }
 
 describe('EventEditorPage', () => {
+  it('keeps edit mode locked on load failure and shows retry state', async () => {
+    vi.mocked(getAdminEventEditorDetail).mockRejectedValue(
+      new Error('网络异常'),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/events/event_broken/edit']}>
+        <Routes>
+          <Route
+            element={<EventEditorPage mode='edit' />}
+            path='/events/:eventId/edit'
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('网络异常')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: '淇濆瓨鑽夌' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '重试加载' })).toBeInTheDocument();
+  });
+
   it('keeps edit actions hidden until preload completes', async () => {
     const deferred = createDeferred<ReturnType<typeof buildEditorDetail>>();
     vi.mocked(getAdminEventEditorDetail).mockReturnValueOnce(deferred.promise);
