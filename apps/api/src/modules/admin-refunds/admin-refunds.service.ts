@@ -18,6 +18,19 @@ type RefundRequestRecord = {
     orderNumber: string;
     status: string;
     userId: string;
+    items: Array<{
+      ticketTier: {
+        session: {
+          event: {
+            city: string;
+            id: string;
+            title: string;
+            venueName: string;
+          };
+          name: string;
+        };
+      };
+    }>;
   };
   orderId: string;
   processedByUserId: string | null;
@@ -37,23 +50,57 @@ type RefundRequestRecord = {
 
 type RefundRequestUpdateRecord = Omit<RefundRequestRecord, 'requesterName'>;
 
+type AdminRefundListItem = {
+  amount: number;
+  currency: string;
+  event?: {
+    city: string;
+    id: string;
+    title: string;
+    venueName: string;
+  };
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  orderStatus: string;
+  processedAt?: string;
+  reason: string;
+  refundNo: string;
+  requestedAt: string;
+  requesterName: string;
+  serviceFee: number;
+  sessionName?: string;
+  status: RefundRequestRecord['status'];
+  userId: string;
+};
+
 type AdminRefundDetail = {
   amount: number;
   currency: string;
+  event?: {
+    city: string;
+    id: string;
+    title: string;
+    venueName: string;
+  };
   id: string;
   lastHandledAt?: string;
   orderId: string;
   orderNumber: string;
+  orderStatus: string;
   processedByUserId?: string;
   reason: string;
   rejectionReason?: string;
   refundNo: string;
   requestedAt: string;
+  requestedAmount: number;
   requesterName: string;
   reviewNote?: string;
   reviewedByUserId?: string;
   serviceFee: number;
+  sessionName?: string;
   status: RefundRequestRecord['status'];
+  userId: string;
 };
 
 type AdminRefundActionNote = {
@@ -74,24 +121,72 @@ function normalizeOptionalText(value: string | null | undefined) {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function normalizeDetail(record: RefundRequestRecord): AdminRefundDetail {
+function normalizeEvent(event: {
+  city: string;
+  id: string;
+  title: string;
+  venueName: string;
+}) {
+  return {
+    city: event.city,
+    id: event.id,
+    title: event.title,
+    venueName: event.venueName,
+  };
+}
+
+function normalizeListItem(record: RefundRequestRecord): AdminRefundListItem {
+  const firstItem = record.order.items[0];
+
   return {
     amount: record.refundAmount,
     currency: record.order.currency,
+    event: firstItem?.ticketTier.session.event
+      ? normalizeEvent(firstItem.ticketTier.session.event)
+      : undefined,
+    id: record.id,
+    orderId: record.order.id,
+    orderNumber: record.order.orderNumber,
+    orderStatus: record.order.status,
+    processedAt: record.processedAt?.toISOString(),
+    reason: record.reason,
+    refundNo: record.refundNo,
+    requestedAt: record.requestedAt.toISOString(),
+    requesterName: record.requesterName,
+    serviceFee: record.serviceFee,
+    sessionName: firstItem?.ticketTier.session.name,
+    status: record.status,
+    userId: record.order.userId,
+  };
+}
+
+function normalizeDetail(record: RefundRequestRecord): AdminRefundDetail {
+  const firstItem = record.order.items[0];
+
+  return {
+    amount: record.refundAmount,
+    currency: record.order.currency,
+    event: firstItem?.ticketTier.session.event
+      ? normalizeEvent(firstItem.ticketTier.session.event)
+      : undefined,
     id: record.id,
     lastHandledAt: record.lastHandledAt?.toISOString(),
     orderId: record.order.id,
     orderNumber: record.order.orderNumber,
+    orderStatus: record.order.status,
     processedByUserId: record.processedByUserId ?? undefined,
     reason: record.reason,
     rejectionReason: record.rejectionReason ?? undefined,
     refundNo: record.refundNo,
     requestedAt: record.requestedAt.toISOString(),
+    requestedAmount: record.requestedAmount,
     requesterName: record.requesterName,
     reviewNote: record.reviewNote ?? undefined,
     reviewedByUserId: record.reviewedByUserId ?? undefined,
     serviceFee: record.serviceFee,
+    sessionName: firstItem?.ticketTier.session.name,
     status: record.status,
+    userId: record.order.userId,
   };
 }
 
@@ -101,6 +196,62 @@ export class AdminRefundsService {
     private readonly prisma: PrismaService,
     private readonly upstreamTicketingGateway: UpstreamTicketingGateway,
   ) {}
+
+  async listRefunds(): Promise<AdminRefundListItem[]> {
+    const refundRequests = await this.prisma.refundRequest.findMany({
+      include: {
+        order: {
+          select: {
+            currency: true,
+            id: true,
+            items: {
+              orderBy: {
+                createdAt: 'asc',
+              },
+              select: {
+                ticketTier: {
+                  select: {
+                    session: {
+                      select: {
+                        event: {
+                          select: {
+                            city: true,
+                            id: true,
+                            title: true,
+                            venueName: true,
+                          },
+                        },
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            orderNumber: true,
+            status: true,
+            userId: true,
+          },
+        },
+      },
+      orderBy: {
+        requestedAt: 'desc',
+      },
+    });
+
+    return Promise.all(
+      refundRequests.map(async (refundRequest) =>
+        normalizeListItem({
+          ...(refundRequest as RefundRequestUpdateRecord),
+          requesterName: await this.loadRequesterName(refundRequest.order.userId),
+        } as RefundRequestRecord),
+      ),
+    );
+  }
+
+  async getRefundDetail(refundId: string): Promise<AdminRefundDetail> {
+    return normalizeDetail(await this.loadRefundRequest(refundId));
+  }
 
   private async loadRequesterName(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -131,6 +282,30 @@ export class AdminRefundsService {
             orderNumber: true,
             status: true,
             userId: true,
+            items: {
+              orderBy: {
+                createdAt: 'asc',
+              },
+              select: {
+                ticketTier: {
+                  select: {
+                    session: {
+                      select: {
+                        event: {
+                          select: {
+                            city: true,
+                            id: true,
+                            title: true,
+                            venueName: true,
+                          },
+                        },
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         orderId: true,

@@ -45,10 +45,14 @@ export {
   type AdminEventListItem,
 } from './admin-event';
 export {
+  adminOrderPaymentSchema,
+  adminOrderRefundHistorySchema,
   adminOrderNoteSchema,
   adminOrderFlagSchema,
   adminOrderListItemSchema,
   adminOrderDetailSchema,
+  type AdminOrderPayment,
+  type AdminOrderRefundHistory,
   type AdminOrderNote,
   type AdminOrderFlag,
   type AdminOrderListItem,

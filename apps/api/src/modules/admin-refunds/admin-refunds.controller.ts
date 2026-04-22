@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Param,
   Post,
   UseGuards,
@@ -77,6 +78,18 @@ function parseProcessRefundBody(body: unknown): ProcessRefundBody {
 @UseGuards(AdminSessionGuard)
 export class AdminRefundsController {
   constructor(private readonly adminRefundsService: AdminRefundsService) {}
+
+  @Get()
+  async listRefunds() {
+    return {
+      items: await this.adminRefundsService.listRefunds(),
+    };
+  }
+
+  @Get(':refundId')
+  async getRefundDetail(@Param('refundId') refundId: string) {
+    return this.adminRefundsService.getRefundDetail(refundId);
+  }
 
   @Post(':refundId/approve')
   async approveRefund(

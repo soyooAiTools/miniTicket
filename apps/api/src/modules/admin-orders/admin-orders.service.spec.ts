@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+﻿import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -37,11 +37,11 @@ describe('AdminOrdersService', () => {
           {
             quantity: 2,
             ticketTier: {
-              name: '内场 A 区',
+              name: 'Section A',
               session: {
                 name: '2026-05-01 19:30',
                 event: {
-                  city: '上海',
+                  city: 'Shanghai',
                   id: 'event_1',
                   title: 'Beta Concert',
                   venueName: 'Expo Arena',
@@ -86,7 +86,7 @@ describe('AdminOrdersService', () => {
         createdAt: '2026-04-21T08:00:00.000Z',
         currency: 'CNY',
         event: {
-          city: '上海',
+          city: 'Shanghai',
           id: 'event_1',
           title: 'Beta Concert',
           venueName: 'Expo Arena',
@@ -132,11 +132,11 @@ describe('AdminOrdersService', () => {
         {
           createdAt: new Date('2026-04-21T08:20:00.000Z'),
           createdBy: {
-            name: '超级管理员',
+            name: 'Super Admin',
           },
           id: 'flag_1',
-          note: '支付成功后长时间未出票',
-          type: '异常票务',
+          note: 'Payment completed but fulfillment has not started after a long delay',
+          type: 'Exception flag',
         },
       ],
       id: 'order_1',
@@ -145,12 +145,12 @@ describe('AdminOrdersService', () => {
           id: 'item_1',
           quantity: 2,
           ticketTier: {
-            name: '内场 A 区',
+            name: 'Section A',
             session: {
               id: 'session_1',
               name: '2026-05-01 19:30',
               event: {
-                city: '上海',
+                city: 'Shanghai',
                 id: 'event_1',
                 title: 'Beta Concert',
                 venueName: 'Expo Arena',
@@ -162,18 +162,44 @@ describe('AdminOrdersService', () => {
           viewer: {
             id: 'viewer_1',
             mobile: '13800138000',
-            name: '张三',
+            name: 'Zhang San',
           },
+        },
+      ],
+      payments: [
+        {
+          createdAt: new Date('2026-04-21T08:05:00.000Z'),
+          paidAt: new Date('2026-04-21T08:10:00.000Z'),
+          providerTxnId: 'pay_001',
+          status: 'SUCCEEDED',
         },
       ],
       notes: [
         {
-          content: '联系用户确认实名信息',
+          content: 'Contacted the customer to confirm identity details',
           createdAt: new Date('2026-04-21T08:15:00.000Z'),
           createdBy: {
-            name: '超级管理员',
+            name: 'Super Admin',
           },
           id: 'note_1',
+        },
+      ],
+      refundRequests: [
+        {
+          id: 'refund_1',
+          lastHandledAt: new Date('2026-04-21T08:30:00.000Z'),
+          processedAt: undefined,
+          processedByUserId: undefined,
+          reason: 'USER_IDENTITY_ERROR',
+          rejectionReason: undefined,
+          refundAmount: 80000,
+          refundNo: 'RFD-001',
+          requestedAt: new Date('2026-04-21T08:00:00.000Z'),
+          requestedAmount: 100000,
+          reviewNote: undefined,
+          reviewedByUserId: undefined,
+          serviceFee: 20000,
+          status: 'REVIEWING',
         },
       ],
       orderNumber: 'AT202604210001',
@@ -181,6 +207,7 @@ describe('AdminOrdersService', () => {
       status: 'REFUND_REVIEWING',
       ticketType: 'E_TICKET',
       totalAmount: 256000,
+      userId: 'cust_1',
     });
 
     const moduleRef = await Test.createTestingModule({
@@ -193,59 +220,84 @@ describe('AdminOrdersService', () => {
 
     const service = moduleRef.get(AdminOrdersService);
 
-    await expect(service.getOrderDetail('order_1')).resolves.toEqual({
-      createdAt: '2026-04-21T08:00:00.000Z',
-      currency: 'CNY',
-      event: {
-        city: '上海',
-        id: 'event_1',
-        title: 'Beta Concert',
-        venueName: 'Expo Arena',
-      },
-      flags: [
-        {
-          createdAt: '2026-04-21T08:20:00.000Z',
-          createdByName: '超级管理员',
-          id: 'flag_1',
-          note: '支付成功后长时间未出票',
-          type: '异常票务',
+    const detail = await service.getOrderDetail('order_1');
+
+    expect(detail).toEqual(
+      expect.objectContaining({
+        createdAt: '2026-04-21T08:00:00.000Z',
+        currency: 'CNY',
+        event: {
+          city: 'Shanghai',
+          id: 'event_1',
+          title: 'Beta Concert',
+          venueName: 'Expo Arena',
         },
-      ],
-      id: 'order_1',
-      items: [
-        {
-          id: 'item_1',
-          quantity: 2,
-          sessionId: 'session_1',
-          sessionName: '2026-05-01 19:30',
-          tierName: '内场 A 区',
-          totalAmount: 256000,
-          unitPrice: 128000,
-          viewer: {
-            id: 'viewer_1',
-            mobile: '13800138000',
-            name: '张三',
-          },
-        },
-      ],
-      notes: [
-        {
-          content: '联系用户确认实名信息',
-          createdAt: '2026-04-21T08:15:00.000Z',
-          createdByName: '超级管理员',
-          id: 'note_1',
-        },
-      ],
-      orderNumber: 'AT202604210001',
-      refundEntryEnabled: true,
-      status: 'REFUND_REVIEWING',
-      ticketType: 'E_TICKET',
-      timeline: {
-        description: expect.any(String),
-        title: expect.any(String),
-      },
-      totalAmount: 256000,
-    });
+        flags: [
+          expect.objectContaining({
+            createdAt: '2026-04-21T08:20:00.000Z',
+            createdByName: 'Super Admin',
+            id: 'flag_1',
+            note: 'Payment completed but fulfillment has not started after a long delay',
+            type: 'Exception flag',
+          }),
+        ],
+        id: 'order_1',
+        items: [
+          expect.objectContaining({
+            id: 'item_1',
+            quantity: 2,
+            sessionId: 'session_1',
+            sessionName: '2026-05-01 19:30',
+            tierName: 'Section A',
+            totalAmount: 256000,
+            unitPrice: 128000,
+            viewer: expect.objectContaining({
+              id: 'viewer_1',
+              mobile: '13800138000',
+              name: 'Zhang San',
+            }),
+          }),
+        ],
+        notes: [
+          expect.objectContaining({
+            content: 'Contacted the customer to confirm identity details',
+            createdAt: '2026-04-21T08:15:00.000Z',
+            createdByName: 'Super Admin',
+            id: 'note_1',
+          }),
+        ],
+        payments: [
+          expect.objectContaining({
+            createdAt: '2026-04-21T08:05:00.000Z',
+            paidAt: '2026-04-21T08:10:00.000Z',
+            providerTxnId: 'pay_001',
+            status: 'SUCCEEDED',
+          }),
+        ],
+        refundRequests: [
+          expect.objectContaining({
+            id: 'refund_1',
+            reason: 'USER_IDENTITY_ERROR',
+            refundAmount: 80000,
+            refundNo: 'RFD-001',
+            requestedAt: '2026-04-21T08:00:00.000Z',
+            requestedAmount: 100000,
+            serviceFee: 20000,
+            status: 'REVIEWING',
+          }),
+        ],
+        orderNumber: 'AT202604210001',
+        refundEntryEnabled: true,
+        status: 'REFUND_REVIEWING',
+        ticketType: 'E_TICKET',
+        timeline: expect.objectContaining({
+          description: expect.any(String),
+          title: expect.any(String),
+        }),
+        totalAmount: 256000,
+        userId: 'cust_1',
+      }),
+    );
 
     expect(prismaMock.order.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -261,10 +313,10 @@ describe('AdminOrdersService', () => {
       id: 'order_1',
     });
     (prismaMock.orderNote.create as jest.Mock).mockResolvedValue({
-      content: '联系用户确认实名信息',
+      content: 'Contacted the customer to confirm identity details',
       createdAt: new Date('2026-04-21T08:30:00.000Z'),
       createdBy: {
-        name: '超级管理员',
+        name: 'Super Admin',
       },
       id: 'note_1',
     });
@@ -283,26 +335,26 @@ describe('AdminOrdersService', () => {
       service.addNote(
         'order_1',
         {
-          content: '  联系用户确认实名信息  ',
+          content: '  Contacted the customer to confirm identity details  ',
         },
         {
           email: 'ops@miniticket.local',
           id: 'admin_1',
-          name: '超级管理员',
+          name: 'Super Admin',
           role: 'ADMIN',
         },
       ),
     ).resolves.toEqual({
-      content: '联系用户确认实名信息',
+      content: 'Contacted the customer to confirm identity details',
       createdAt: '2026-04-21T08:30:00.000Z',
-      createdByName: '超级管理员',
+      createdByName: 'Super Admin',
       id: 'note_1',
     });
 
     expect(prismaMock.orderNote.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: {
-          content: '联系用户确认实名信息',
+          content: 'Contacted the customer to confirm identity details',
           createdByUserId: 'admin_1',
           orderId: 'order_1',
         },
@@ -317,11 +369,11 @@ describe('AdminOrdersService', () => {
     (prismaMock.orderFlag.create as jest.Mock).mockResolvedValue({
       createdAt: new Date('2026-04-21T08:40:00.000Z'),
       createdBy: {
-        name: '超级管理员',
+        name: 'Super Admin',
       },
       id: 'flag_1',
-      note: '支付成功后长时间未出票',
-      type: '异常票务',
+      note: 'Payment completed but fulfillment has not started after a long delay',
+      type: 'Exception flag',
     });
 
     const moduleRef = await Test.createTestingModule({
@@ -338,31 +390,31 @@ describe('AdminOrdersService', () => {
       service.addFlag(
         'order_1',
         {
-          note: '  支付成功后长时间未出票  ',
-          type: '  异常票务  ',
+          note: '  Payment completed but fulfillment has not started after a long delay ',
+          type: '  Exception flag  ',
         },
         {
           email: 'ops@miniticket.local',
           id: 'admin_1',
-          name: '超级管理员',
+          name: 'Super Admin',
           role: 'OPERATIONS',
         },
       ),
     ).resolves.toEqual({
       createdAt: '2026-04-21T08:40:00.000Z',
-      createdByName: '超级管理员',
+      createdByName: 'Super Admin',
       id: 'flag_1',
-      note: '支付成功后长时间未出票',
-      type: '异常票务',
+      note: 'Payment completed but fulfillment has not started after a long delay',
+      type: 'Exception flag',
     });
 
     expect(prismaMock.orderFlag.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: {
           createdByUserId: 'admin_1',
-          note: '支付成功后长时间未出票',
+          note: 'Payment completed but fulfillment has not started after a long delay',
           orderId: 'order_1',
-          type: '异常票务',
+          type: 'Exception flag',
         },
       }),
     );
@@ -385,12 +437,12 @@ describe('AdminOrdersService', () => {
       service.addNote(
         'missing_order',
         {
-          content: '需要人工核实',
+          content: 'Need manual review',
         },
         {
           email: 'ops@miniticket.local',
           id: 'admin_1',
-          name: '超级管理员',
+          name: 'Super Admin',
           role: 'ADMIN',
         },
       ),

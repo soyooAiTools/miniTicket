@@ -42,6 +42,23 @@ describe('AdminRefundsService', () => {
       order: {
         currency: 'CNY',
         id: 'order_1',
+        items: [
+          {
+            quantity: 2,
+            ticketTier: {
+              name: '鍐呭満 A 鍖?',
+              session: {
+                name: '2026-05-01 19:30',
+                event: {
+                  city: '涓婃捣',
+                  id: 'event_1',
+                  title: 'Beta Concert',
+                  venueName: 'Expo Arena',
+                },
+              },
+            },
+          },
+        ],
         orderNumber: 'AT202604210001',
         status: 'REFUND_REVIEWING',
         userId: 'cust_1',

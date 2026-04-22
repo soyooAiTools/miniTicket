@@ -5,8 +5,12 @@ import { AdminLoginPage } from './app/AdminLoginPage';
 import { RequireAdminAuth } from './app/RequireAdminAuth';
 import { AdminDetailPage, AdminSectionPage } from './app/admin-workspace-pages';
 import { DashboardPage } from './pages/dashboard';
-import { EventsPage } from './pages/events';
 import { EventDetailPage, EventEditorPage } from './pages/events/editor';
+import { EventsPage } from './pages/events';
+import { OrdersDetailPage } from './pages/orders/detail';
+import { OrdersListPage } from './pages/orders/list';
+import { RefundDetailPage } from './pages/refunds/detail';
+import { RefundsListPage } from './pages/refunds/list';
 
 export function AppRouter() {
   return (
@@ -23,41 +27,7 @@ export function AppRouter() {
           <Route
             element={
               <AdminSectionPage
-                description='订单查询、人工介入、核销和备注入口。'
-                title='订单'
-              />
-            }
-            path='orders'
-          />
-          <Route
-            element={<AdminDetailPage kind='订单' mode='detail' paramKey='orderId' />}
-            path='orders/:orderId'
-          />
-          <Route
-            element={<AdminDetailPage kind='订单' mode='editor' paramKey='orderId' />}
-            path='orders/:orderId/edit'
-          />
-          <Route
-            element={
-              <AdminSectionPage
-                description='退款队列、审批、驳回和处理入口。'
-                title='退款'
-              />
-            }
-            path='refunds'
-          />
-          <Route
-            element={<AdminDetailPage kind='退款' mode='detail' paramKey='refundId' />}
-            path='refunds/:refundId'
-          />
-          <Route
-            element={<AdminDetailPage kind='退款' mode='editor' paramKey='refundId' />}
-            path='refunds/:refundId/edit'
-          />
-          <Route
-            element={
-              <AdminSectionPage
-                description='管理员账号、权限和启用状态管理入口。'
+                description='管理账号、权限和启用状态的统一入口。'
                 title='账号'
               />
             }
@@ -71,6 +41,10 @@ export function AppRouter() {
             element={<AdminDetailPage kind='账号' mode='editor' paramKey='userId' />}
             path='users/:userId/edit'
           />
+          <Route element={<OrdersListPage />} path='orders' />
+          <Route element={<OrdersDetailPage />} path='orders/:orderId' />
+          <Route element={<RefundsListPage />} path='refunds' />
+          <Route element={<RefundDetailPage />} path='refunds/:refundId' />
           <Route element={<Navigate replace to='/dashboard' />} path='*' />
         </Route>
       </Route>

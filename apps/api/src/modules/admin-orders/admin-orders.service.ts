@@ -84,9 +84,32 @@ type AdminOrderDetailRecord = {
   items: AdminOrderDetailItemRecord[];
   notes: AdminOrderNoteRecord[];
   orderNumber: string;
+  payments: Array<{
+    createdAt: Date;
+    paidAt: Date | null;
+    providerTxnId: string | null;
+    status: string;
+  }>;
+  refundRequests: Array<{
+    id: string;
+    lastHandledAt: Date | null;
+    processedAt: Date | null;
+    processedByUserId: string | null;
+    reason: string;
+    rejectionReason: string | null;
+    refundAmount: number;
+    refundNo: string;
+    requestedAmount: number;
+    requestedAt: Date;
+    reviewNote: string | null;
+    reviewedByUserId: string | null;
+    serviceFee: number;
+    status: string;
+  }>;
   status: AdminOrderListItemRecord['status'];
   ticketType: AdminOrderListItemRecord['ticketType'];
   totalAmount: number;
+  userId: string;
 };
 
 type AdminOrderDetailEventSummary = AdminOrderEventSummary & {
@@ -146,6 +169,28 @@ type AdminOrderDetail = {
       name: string;
     };
   }>;
+  payments: Array<{
+    createdAt: string;
+    paidAt?: string;
+    providerTxnId?: string;
+    status: string;
+  }>;
+  refundRequests: Array<{
+    id: string;
+    lastHandledAt?: string;
+    processedAt?: string;
+    processedByUserId?: string;
+    reason: string;
+    rejectionReason?: string;
+    refundAmount: number;
+    refundNo: string;
+    requestedAmount: number;
+    requestedAt: string;
+    reviewNote?: string;
+    reviewedByUserId?: string;
+    serviceFee: number;
+    status: string;
+  }>;
   notes: Array<{
     content: string;
     createdAt: string;
@@ -161,6 +206,7 @@ type AdminOrderDetail = {
     title: string;
   };
   totalAmount: number;
+  userId: string;
 };
 
 type AdminOrderNote = {
@@ -286,6 +332,38 @@ function normalizeOrderFlag(flag: AdminOrderFlagRecord): AdminOrderFlag {
   };
 }
 
+function normalizeOrderPayment(
+  payment: AdminOrderDetailRecord['payments'][number],
+) {
+  return {
+    createdAt: payment.createdAt.toISOString(),
+    paidAt: normalizeOptionalDate(payment.paidAt),
+    providerTxnId: normalizeOptionalText(payment.providerTxnId),
+    status: payment.status,
+  };
+}
+
+function normalizeOrderRefundRequest(
+  refundRequest: AdminOrderDetailRecord['refundRequests'][number],
+) {
+  return {
+    id: refundRequest.id,
+    lastHandledAt: normalizeOptionalDate(refundRequest.lastHandledAt),
+    processedAt: normalizeOptionalDate(refundRequest.processedAt),
+    processedByUserId: normalizeOptionalText(refundRequest.processedByUserId),
+    reason: refundRequest.reason,
+    rejectionReason: normalizeOptionalText(refundRequest.rejectionReason),
+    refundAmount: refundRequest.refundAmount,
+    refundNo: refundRequest.refundNo,
+    requestedAmount: refundRequest.requestedAmount,
+    requestedAt: refundRequest.requestedAt.toISOString(),
+    reviewNote: normalizeOptionalText(refundRequest.reviewNote),
+    reviewedByUserId: normalizeOptionalText(refundRequest.reviewedByUserId),
+    serviceFee: refundRequest.serviceFee,
+    status: refundRequest.status,
+  };
+}
+
 function normalizeDetail(
   order: AdminOrderDetailRecord,
   orderTimelineService: OrderTimelineService,
@@ -309,6 +387,8 @@ function normalizeDetail(
     flags: order.flags.map(normalizeOrderFlag),
     id: order.id,
     items: order.items.map(normalizeOrderItem),
+    payments: order.payments.map(normalizeOrderPayment),
+    refundRequests: order.refundRequests.map(normalizeOrderRefundRequest),
     notes: order.notes.map(normalizeOrderNote),
     orderNumber: order.orderNumber,
     refundEntryEnabled,
@@ -316,6 +396,7 @@ function normalizeDetail(
     ticketType: order.ticketType,
     timeline: orderTimelineService.toTimelineItem(order.status, order.ticketType),
     totalAmount: order.totalAmount,
+    userId: order.userId,
   };
 }
 
@@ -436,6 +517,38 @@ export class AdminOrdersService {
                 name: true,
               },
             },
+          },
+        },
+        payments: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          select: {
+            createdAt: true,
+            paidAt: true,
+            providerTxnId: true,
+            status: true,
+          },
+        },
+        refundRequests: {
+          orderBy: {
+            requestedAt: 'desc',
+          },
+          select: {
+            id: true,
+            lastHandledAt: true,
+            processedAt: true,
+            processedByUserId: true,
+            reason: true,
+            rejectionReason: true,
+            refundAmount: true,
+            refundNo: true,
+            requestedAmount: true,
+            requestedAt: true,
+            reviewNote: true,
+            reviewedByUserId: true,
+            serviceFee: true,
+            status: true,
           },
         },
         notes: {
