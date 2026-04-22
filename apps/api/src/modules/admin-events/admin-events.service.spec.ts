@@ -358,6 +358,58 @@ describe('AdminEventsService', () => {
     });
   });
 
+  it('forces newly created events to stay unpublished even when the payload asks to publish', async () => {
+    (prismaMock.event.create as jest.Mock).mockResolvedValue({
+      city: 'Shanghai',
+      coverImageUrl: 'https://example.com/poster.jpg',
+      description: 'Livehouse night',
+      id: 'event_001',
+      published: false,
+      title: 'Beta Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+      sessions: [],
+    });
+
+    const service = new AdminEventsService(prismaMock);
+    const result = await service.createEvent({
+      city: 'Shanghai',
+      coverImageUrl: 'https://example.com/poster.jpg',
+      description: 'Livehouse night',
+      published: true,
+      sessions: [
+        {
+          name: '2026-05-01 19:30',
+          startsAt: '2026-05-01T11:30:00.000Z',
+          tiers: [
+            {
+              inventory: 120,
+              name: 'VIP Standing',
+              price: 799,
+              purchaseLimit: 4,
+              refundable: true,
+              refundDeadlineAt: '2026-04-29T16:00:00.000Z',
+              requiresRealName: true,
+              sortOrder: 1,
+              ticketType: 'E_TICKET',
+            },
+          ],
+        },
+      ],
+      title: 'Beta Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+    });
+
+    expect(prismaMock.event.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        published: false,
+      }),
+      select: expect.any(Object),
+    });
+    expect(result.published).toBe(false);
+  });
+
   it('rejects event creation when a session does not include any tiers', async () => {
     const service = new AdminEventsService(prismaMock);
 
@@ -607,7 +659,6 @@ describe('AdminEventsService', () => {
         city: 'Shanghai',
         description: 'Updated event',
         minPrice: 399,
-        published: true,
         refundEntryEnabled: true,
         sessions: {
           create: [

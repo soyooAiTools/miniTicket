@@ -577,7 +577,7 @@ function buildEventCreateData(input: AdminEventDraft) {
     coverImageUrl: input.coverImageUrl,
     description: input.description,
     minPrice: derived.minPrice,
-    published: input.published ?? false,
+    published: false,
     refundEntryEnabled: derived.refundEntryEnabled,
     saleStatus: 'UPCOMING' as const,
     sessions: {
@@ -605,7 +605,6 @@ function buildEventUpdateData(input: AdminEventEditor) {
       : { coverImageUrl: input.coverImageUrl }),
     ...(input.description === undefined ? {} : { description: input.description }),
     minPrice: derived.minPrice,
-    ...(input.published === undefined ? {} : { published: input.published }),
     refundEntryEnabled: derived.refundEntryEnabled,
     sessions: {
       create: input.sessions.map(buildSessionCreateData),
@@ -633,7 +632,6 @@ function buildEventMetadataOnlyUpdateData(input: AdminEventEditor) {
       : { coverImageUrl: input.coverImageUrl }),
     ...(input.description === undefined ? {} : { description: input.description }),
     minPrice: derived.minPrice,
-    ...(input.published === undefined ? {} : { published: input.published }),
     refundEntryEnabled: derived.refundEntryEnabled,
     title: input.title,
     venueAddress: input.venueAddress,
