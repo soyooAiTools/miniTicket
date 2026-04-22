@@ -43,6 +43,7 @@ describe('AdminOrdersService', () => {
                 event: {
                   city: 'Shanghai',
                   id: 'event_1',
+                  refundEntryEnabled: true,
                   title: 'Beta Concert',
                   venueName: 'Expo Arena',
                 },
@@ -103,6 +104,7 @@ describe('AdminOrdersService', () => {
           status: 'REVIEWING',
         },
         orderNumber: 'AT202604210001',
+        refundEntryEnabled: true,
         sessionName: '2026-05-01 19:30',
         status: 'REFUND_REVIEWING',
         ticketType: 'E_TICKET',
@@ -149,14 +151,15 @@ describe('AdminOrdersService', () => {
             session: {
               id: 'session_1',
               name: '2026-05-01 19:30',
-              event: {
-                city: 'Shanghai',
-                id: 'event_1',
-                title: 'Beta Concert',
-                venueName: 'Expo Arena',
+                event: {
+                  city: 'Shanghai',
+                  id: 'event_1',
+                  refundEntryEnabled: true,
+                  title: 'Beta Concert',
+                  venueName: 'Expo Arena',
+                },
               },
             },
-          },
           totalAmount: 256000,
           unitPrice: 128000,
           viewer: {

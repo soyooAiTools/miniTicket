@@ -26,7 +26,9 @@ type AdminOrderListItemRecord = {
       session: {
         id: string;
         name: string;
-        event: AdminOrderEventSummary;
+        event: AdminOrderEventSummary & {
+          refundEntryEnabled: boolean;
+        };
       };
     };
   }>;
@@ -132,6 +134,7 @@ type AdminOrderListItem = {
     status: string;
   };
   orderNumber: string;
+  refundEntryEnabled: boolean;
   sessionName?: string;
   status: AdminOrderListItemRecord['status'];
   ticketType: AdminOrderListItemRecord['ticketType'];
@@ -266,6 +269,8 @@ function normalizeListItem(
   const firstItem = order.items[0];
   const latestPayment = order.payments[0];
   const latestRefundRequest = order.refundRequests[0];
+  const refundEntryEnabled =
+    firstItem?.ticketTier.session.event.refundEntryEnabled ?? false;
 
   return {
     createdAt: order.createdAt.toISOString(),
@@ -287,6 +292,7 @@ function normalizeListItem(
         }
       : undefined,
     orderNumber: order.orderNumber,
+    refundEntryEnabled,
     sessionName: firstItem?.ticketTier.session.name,
     status: order.status,
     ticketType: order.ticketType,
@@ -375,10 +381,6 @@ function normalizeDetail(
   }
 
   const event = firstItem.ticketTier.session.event as AdminOrderDetailEventSummary;
-  const refundEntryEnabled =
-    event.refundEntryEnabled ??
-    (order as { refundEntryEnabled?: boolean }).refundEntryEnabled ??
-    false;
 
   return {
     createdAt: order.createdAt.toISOString(),
@@ -391,7 +393,7 @@ function normalizeDetail(
     refundRequests: order.refundRequests.map(normalizeOrderRefundRequest),
     notes: order.notes.map(normalizeOrderNote),
     orderNumber: order.orderNumber,
-    refundEntryEnabled,
+    refundEntryEnabled: event.refundEntryEnabled,
     status: order.status,
     ticketType: order.ticketType,
     timeline: orderTimelineService.toTimelineItem(order.status, order.ticketType),
@@ -502,6 +504,7 @@ export class AdminOrdersService {
                       select: {
                         city: true,
                         id: true,
+                        refundEntryEnabled: true,
                         title: true,
                         venueName: true,
                       },
