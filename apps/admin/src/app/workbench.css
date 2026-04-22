@@ -1,0 +1,182 @@
+:root {
+  color: #172033;
+  background: #f4f7fb;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(56, 121, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  background: transparent;
+}
+
+.admin-shell__sider {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(248, 250, 253, 0.92) !important;
+  border-right: 1px solid rgba(26, 34, 57, 0.08);
+  box-shadow: 0 12px 36px rgba(14, 27, 54, 0.04);
+}
+
+.admin-shell__brand {
+  padding: 24px 20px 12px;
+}
+
+.admin-shell__brand-eyebrow,
+.admin-shell__header-eyebrow {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6a7387;
+}
+
+.admin-shell__brand-title,
+.admin-shell__header-title {
+  margin: 4px 0 0 !important;
+  color: #152033 !important;
+}
+
+.admin-shell__brand-subtitle {
+  display: block;
+  margin-top: 4px;
+  color: #7a8498;
+}
+
+.admin-shell__menu {
+  background: transparent !important;
+  border-inline-end: 0 !important;
+  padding: 0 12px 20px;
+}
+
+.admin-shell__menu .ant-menu-item {
+  margin-block: 4px !important;
+  width: calc(100% - 8px);
+  border-radius: 12px;
+  height: 40px;
+  line-height: 40px;
+}
+
+.admin-shell__menu .ant-menu-item-selected {
+  background: rgba(47, 112, 255, 0.12) !important;
+  color: #2055dc !important;
+}
+
+.admin-shell__menu-link {
+  display: block;
+  font-weight: 600;
+}
+
+.admin-shell__main {
+  background: transparent;
+}
+
+.admin-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: auto;
+  padding: 20px 24px 10px;
+  background: transparent;
+}
+
+.admin-shell__header-title {
+  margin: 2px 0 0 !important;
+}
+
+.admin-shell__header-tag {
+  border: 0;
+  background: rgba(47, 112, 255, 0.1);
+  color: #2055dc;
+}
+
+.admin-shell__content {
+  padding: 0 24px 24px;
+}
+
+.admin-shell__surface {
+  min-height: calc(100vh - 112px);
+  padding: 20px;
+  border: 1px solid rgba(24, 36, 58, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 22px 56px rgba(16, 28, 51, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.admin-auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.admin-auth__card {
+  width: min(440px, 100%);
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(19, 31, 51, 0.08);
+  box-shadow: 0 24px 64px rgba(16, 26, 46, 0.1);
+}
+
+.admin-auth__hint {
+  margin-bottom: 24px;
+  color: #6f7890;
+}
+
+.admin-page {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-page__title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.admin-page__subtitle {
+  margin: 6px 0 0;
+  color: #6a7387;
+}
+
+.admin-page__meta {
+  color: #7a8498;
+  font-size: 13px;
+}
+
+.admin-page__empty {
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px dashed rgba(80, 95, 128, 0.18);
+  color: #677189;
+  background: rgba(247, 249, 252, 0.8);
+}

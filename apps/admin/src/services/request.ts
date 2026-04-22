@@ -1,6 +1,5 @@
 const DEFAULT_API_BASE_URL = '/api';
 const API_BASE_URL_STORAGE_KEY = 'ticketing.admin.apiBaseUrl';
-const API_SECRET_STORAGE_KEY = 'ticketing.admin.apiSecret';
 
 function readBrowserSetting(key: string) {
   if (typeof window === 'undefined') {
@@ -49,16 +48,12 @@ export async function request<TResponse>(
   init: globalThis.RequestInit = {},
 ): Promise<TResponse> {
   const headers = new Headers(init.headers);
-  const adminSecret = readBrowserSetting(API_SECRET_STORAGE_KEY);
 
   headers.set('accept', 'application/json');
 
-  if (adminSecret && !headers.has('x-admin-secret')) {
-    headers.set('x-admin-secret', adminSecret);
-  }
-
   const response = await fetch(buildApiUrl(path), {
     ...init,
+    credentials: 'include',
     headers,
   });
 
