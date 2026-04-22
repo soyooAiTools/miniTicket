@@ -49,6 +49,11 @@ export class AdminEventsController {
     };
   }
 
+  @Get(':eventId')
+  async getEvent(@Param('eventId') eventId: string) {
+    return this.adminEventsService.getEvent(eventId);
+  }
+
   @Post()
   async createEvent(@Body() body: unknown) {
     const parsedBody = parseEventDraftBody(body);

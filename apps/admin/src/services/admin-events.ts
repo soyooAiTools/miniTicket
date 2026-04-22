@@ -28,6 +28,13 @@ export async function getAdminEventDetail(eventId: string): Promise<EventDetail>
   return eventDetailSchema.parse(payload);
 }
 
+export async function getAdminEventEditorDetail(
+  eventId: string,
+): Promise<AdminEventEditor> {
+  const payload = await request<unknown>(`/admin/events/${eventId}`);
+  return adminEventEditorSchema.parse(payload);
+}
+
 export async function createAdminEvent(
   input: AdminEventDraft,
 ): Promise<AdminEventEditor> {

@@ -669,6 +669,11 @@ export class AdminEventsService {
     return events.map(normalizeListItem);
   }
 
+  async getEvent(eventId: string): Promise<AdminEventEditor> {
+    const event = await this.loadEventForValidation(eventId);
+    return normalizeEvent(event as PrismaAdminEvent);
+  }
+
   async createEvent(input: AdminEventDraft): Promise<AdminEventEditor> {
     const event = await this.prisma.event.create({
       data: buildEventCreateData(input),

@@ -28,6 +28,7 @@ import {
 import {
   createAdminEvent,
   getAdminEventDetail,
+  getAdminEventEditorDetail,
   publishAdminEvent,
   unpublishAdminEvent,
   updateAdminEvent,
@@ -113,7 +114,7 @@ function trimToUndefined(value: string | undefined) {
   return nextValue ? nextValue : undefined;
 }
 
-function detailToFormValue(detail: EventDetail): EventEditorFormValue {
+function detailToFormValue(detail: AdminEventEditor): EventEditorFormValue {
   return {
     city: detail.city,
     coverImageUrl: detail.coverImageUrl,
@@ -126,7 +127,7 @@ function detailToFormValue(detail: EventDetail): EventEditorFormValue {
           saleEndsAt: session.saleEndsAt,
           saleStartsAt: session.saleStartsAt,
           startsAt: session.startsAt,
-          tiers: session.ticketTiers.map((tier) => ({
+          tiers: session.tiers.map((tier) => ({
             id: tier.id,
             inventory: tier.inventory,
             name: tier.name,
@@ -141,7 +142,7 @@ function detailToFormValue(detail: EventDetail): EventEditorFormValue {
         }))
       : [createDefaultSession()],
     title: detail.title,
-    venueAddress: '',
+    venueAddress: detail.venueAddress,
     venueName: detail.venueName,
   };
 }
@@ -245,13 +246,15 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
 
     void (async () => {
       try {
-        const detail = eventDetailSchema.parse(await getAdminEventDetail(eventId));
+        const detail = adminEventEditorSchema.parse(
+          await getAdminEventEditorDetail(eventId),
+        );
         if (!active) {
           return;
         }
 
         form.setFieldsValue(detailToFormValue(detail));
-        setPublished(detail.published);
+        setPublished(Boolean(detail.published));
       } catch (loadError) {
         if (!active) {
           return;
