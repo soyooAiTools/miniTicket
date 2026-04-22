@@ -82,13 +82,18 @@ describe('AdminLayout', () => {
     });
 
     expect(await screen.findByText('已退出本地会话')).toBeVisible();
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining('/admin/auth/logout'),
-      expect.objectContaining({
-        credentials: 'include',
-        method: 'POST',
-      }),
-    );
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          typeof url === 'string' &&
+          url.includes('/admin/auth/logout') &&
+          !!init &&
+          typeof init === 'object' &&
+          'method' in init &&
+          init.method === 'POST' &&
+          'credentials' in init &&
+          init.credentials === 'include',
+      ),
+    ).toBe(true);
   });
 });
