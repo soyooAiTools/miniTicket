@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Layout,
   Menu,
@@ -41,9 +42,10 @@ function getSectionLabel(pathname: string) {
 export function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, session } = useAdminAuth();
+  const { authError, logout, session } = useAdminAuth();
   const selectedKey = getSectionKey(location.pathname);
   const sectionLabel = getSectionLabel(location.pathname);
+  const userLabel = session?.user.name ?? (authError ? '会话降级' : '未命名管理员');
 
   async function handleLogout() {
     await logout();
@@ -92,17 +94,28 @@ export function AdminLayout() {
           </div>
 
           <Space size={12}>
-            <Tag className='admin-shell__header-tag' color='blue'>
-              {session?.user.name ?? '未命名管理员'}
+            <Tag className='admin-shell__header-tag' color={authError ? 'gold' : 'blue'}>
+              {userLabel}
             </Tag>
-            <Button onClick={handleLogout} type='text'>
-              退出登录
-            </Button>
+            {session ? (
+              <Button onClick={handleLogout} type='text'>
+                退出登录
+              </Button>
+            ) : null}
           </Space>
         </Header>
 
         <Content className='admin-shell__content'>
           <div className='admin-shell__surface'>
+            {authError ? (
+              <Alert
+                description={authError}
+                showIcon
+                style={{ marginBottom: 16 }}
+                type='warning'
+                message='管理员会话加载失败'
+              />
+            ) : null}
             <Outlet />
           </div>
         </Content>

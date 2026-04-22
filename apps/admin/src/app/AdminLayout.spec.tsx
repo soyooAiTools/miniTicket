@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -44,5 +45,50 @@ describe('AdminLayout', () => {
     expect(screen.getByRole('link', { name: '订单' })).toBeVisible();
     expect(screen.getByRole('link', { name: '退款' })).toBeVisible();
     expect(screen.getByRole('link', { name: '账号' })).toBeVisible();
+  });
+
+  it('clears the local session even when logout fails on the server', async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, '', '/dashboard');
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          user: {
+            email: 'ops@example.com',
+            id: 'admin_1',
+            name: '运营管理员',
+            role: 'ADMIN',
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ message: 'boom' }, 500));
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <AdminAuthProvider>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+      </AdminAuthProvider>,
+    );
+
+    await screen.findByRole('button', { name: '退出登录' });
+    await user.click(screen.getByRole('button', { name: '退出登录' }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/login');
+    });
+
+    expect(await screen.findByText('已退出本地会话')).toBeVisible();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/admin/auth/logout'),
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'POST',
+      }),
+    );
   });
 });

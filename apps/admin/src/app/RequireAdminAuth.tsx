@@ -5,13 +5,13 @@ import { useAdminAuth } from './admin-auth-context';
 
 export function RequireAdminAuth() {
   const location = useLocation();
-  const { isLoading, session } = useAdminAuth();
+  const { authError, isLoading, session } = useAdminAuth();
 
   if (isLoading) {
     return <Spin fullscreen size='large' tip='正在加载管理员会话' />;
   }
 
-  if (!session) {
+  if (!session && !authError) {
     return <Navigate replace state={{ from: location }} to='/login' />;
   }
 

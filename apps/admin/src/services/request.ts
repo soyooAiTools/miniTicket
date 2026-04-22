@@ -1,6 +1,16 @@
 const DEFAULT_API_BASE_URL = '/api';
 const API_BASE_URL_STORAGE_KEY = 'ticketing.admin.apiBaseUrl';
 
+export class AdminRequestError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'AdminRequestError';
+    this.status = status;
+  }
+}
+
 function readBrowserSetting(key: string) {
   if (typeof window === 'undefined') {
     return undefined;
@@ -58,7 +68,7 @@ export async function request<TResponse>(
   });
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response));
+    throw new AdminRequestError(response.status, await readErrorMessage(response));
   }
 
   if (response.status === 204) {

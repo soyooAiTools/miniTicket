@@ -38,4 +38,56 @@ describe('admin auth routing', () => {
       await screen.findByRole('heading', { name: '管理员登录' }),
     ).toBeVisible();
   });
+
+  it('keeps the protected shell open when current session check fails with a transient error', async () => {
+    window.history.pushState({}, '', '/orders');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ message: 'Server error' }, 500)),
+    );
+
+    render(
+      <AdminAuthProvider>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+      </AdminAuthProvider>,
+    );
+
+    expect(await screen.findByText('管理员会话加载失败')).toBeVisible();
+    expect(window.location.pathname).toBe('/orders');
+  });
+
+  it('returns authenticated users visiting /login back to the dashboard', async () => {
+    window.history.pushState({}, '', '/login');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          user: {
+            email: 'ops@example.com',
+            id: 'admin_1',
+            name: '运营管理员',
+            role: 'ADMIN',
+          },
+        }),
+      ),
+    );
+
+    render(
+      <AdminAuthProvider>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+      </AdminAuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: '运营概览' }),
+    ).toBeVisible();
+  });
 });
