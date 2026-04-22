@@ -20,6 +20,7 @@ import {
   adminEventDraftSchema,
   adminEventEditorSchema,
   eventDetailSchema,
+  adminEventSessionDraftSchema,
   type AdminEventDraft,
   type AdminEventEditor,
   type EventDetail,
@@ -29,6 +30,7 @@ import {
   createAdminEvent,
   getAdminEventDetail,
   getAdminEventEditorDetail,
+  type AdminEventEditorLoad,
   publishAdminEvent,
   unpublishAdminEvent,
   updateAdminEvent,
@@ -114,7 +116,13 @@ function trimToUndefined(value: string | undefined) {
   return nextValue ? nextValue : undefined;
 }
 
-function detailToFormValue(detail: AdminEventEditor): EventEditorFormValue {
+const adminEventEditorLoadSchema = adminEventEditorSchema
+  .omit({ sessions: true })
+  .extend({
+    sessions: adminEventSessionDraftSchema.array().default([]),
+  });
+
+function detailToFormValue(detail: AdminEventEditorLoad): EventEditorFormValue {
   return {
     city: detail.city,
     coverImageUrl: detail.coverImageUrl,
@@ -243,10 +251,11 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
 
     setLoading(true);
     setError(undefined);
+    setPublished(false);
 
     void (async () => {
       try {
-        const detail = adminEventEditorSchema.parse(
+        const detail = adminEventEditorLoadSchema.parse(
           await getAdminEventEditorDetail(eventId),
         );
         if (!active) {
@@ -265,6 +274,7 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
             ? loadError.message
             : '无法加载活动详情。',
         );
+        setPublished(false);
         form.setFieldsValue(createDefaultValues());
       } finally {
         if (active) {
@@ -361,11 +371,12 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
         type='info'
       />
 
-      <Form
-        form={form}
-        initialValues={createDefaultValues()}
-        layout='vertical'
-      >
+      {mode === 'create' || !loading ? (
+        <Form
+          form={form}
+          initialValues={createDefaultValues()}
+          layout='vertical'
+        >
         <SectionCard title='基本信息'>
           <Space direction='vertical' size={12} style={{ display: 'flex' }}>
             <Form.Item
@@ -645,7 +656,8 @@ export function EventEditorPage({ mode }: { mode: EventEditorMode }) {
             {eventId ? <Link to={`/events/${eventId}`}>返回详情</Link> : null}
           </Space>
         </SectionCard>
-      </Form>
+        </Form>
+      ) : null}
 
       {loading ? <Alert message='正在加载活动信息...' showIcon type='info' /> : null}
       {mode === 'edit' && eventId ? (

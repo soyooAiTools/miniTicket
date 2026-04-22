@@ -1,6 +1,7 @@
 import {
   adminEventDraftSchema,
   adminEventEditorSchema,
+  adminEventSessionDraftSchema,
   adminEventListItemSchema,
   eventDetailSchema,
   type AdminEventDraft,
@@ -18,6 +19,14 @@ export type {
   EventDetail,
 } from '@ticketing/contracts';
 
+const adminEventEditorLoadSchema = adminEventEditorSchema
+  .omit({ sessions: true })
+  .extend({
+    sessions: adminEventSessionDraftSchema.array().default([]),
+  });
+
+export type AdminEventEditorLoad = AdminEventEditor;
+
 export async function getAdminEvents(): Promise<AdminEventListItem[]> {
   const payload = await request<{ items?: unknown[] }>('/admin/events');
   return (payload.items ?? []).map((item) => adminEventListItemSchema.parse(item));
@@ -30,9 +39,9 @@ export async function getAdminEventDetail(eventId: string): Promise<EventDetail>
 
 export async function getAdminEventEditorDetail(
   eventId: string,
-): Promise<AdminEventEditor> {
+): Promise<AdminEventEditorLoad> {
   const payload = await request<unknown>(`/admin/events/${eventId}`);
-  return adminEventEditorSchema.parse(payload);
+  return adminEventEditorLoadSchema.parse(payload);
 }
 
 export async function createAdminEvent(
