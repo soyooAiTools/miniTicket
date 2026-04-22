@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createAdminUser,
   getAdminUsers,
+  updateAdminUserRole,
   setAdminUserEnabled,
 } from './admin-users';
 import { jsonRequest, request } from './request';
@@ -89,6 +90,27 @@ describe('admin-users service', () => {
     );
     expect(jsonRequest).toHaveBeenCalledWith('/admin/users/admin_002/enabled', 'PATCH', {
       enabled: false,
+    });
+  });
+
+  it('updates an admin user role through the patch endpoint', async () => {
+    vi.mocked(jsonRequest).mockResolvedValue({
+      createdAt: '2026-04-20T08:00:00.000Z',
+      email: 'ops@miniticket.local',
+      enabled: true,
+      id: 'admin_002',
+      name: '杩愯惀浜屽彿',
+      role: 'ADMIN',
+      updatedAt: '2026-04-22T09:00:00.000Z',
+    });
+
+    await expect(updateAdminUserRole('admin_002', 'ADMIN')).resolves.toMatchObject({
+      id: 'admin_002',
+      role: 'ADMIN',
+    });
+
+    expect(jsonRequest).toHaveBeenCalledWith('/admin/users/admin_002', 'PATCH', {
+      role: 'ADMIN',
     });
   });
 });

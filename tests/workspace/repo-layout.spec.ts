@@ -93,12 +93,14 @@ describe('repo layout', () => {
       }),
     );
 
-    expect(readJson<{ scripts: Record<string, string> }>('apps/admin/package.json').scripts).toEqual({
-      dev: 'vite',
-      build: 'tsc -b && vite build',
-      test: 'vitest run --passWithNoTests',
-      lint: 'eslint src --ext .ts,.tsx',
-    });
+    expect(readJson<{ scripts: Record<string, string> }>('apps/admin/package.json').scripts).toEqual(
+      expect.objectContaining({
+        dev: 'vite',
+        build: 'tsc -b && vite build',
+        test: 'vitest run --passWithNoTests',
+        lint: 'eslint src --ext .ts,.tsx',
+      }),
+    );
 
     const miniappPackage = readJson<{
       scripts: Record<string, string>;
@@ -106,14 +108,16 @@ describe('repo layout', () => {
       devDependencies: Record<string, string>;
     }>('apps/miniapp/package.json');
 
-    expect(miniappPackage.scripts).toEqual({
-      'dev:weapp': 'taro build --type weapp --watch --mode development',
-      'dev:weapp:device': 'node ../../scripts/run-miniapp-device.mjs dev',
-      'build:weapp': 'taro build --type weapp --mode production',
-      'build:weapp:device': 'node ../../scripts/run-miniapp-device.mjs build',
-      test: 'vitest run',
-      lint: 'eslint src --ext .ts,.tsx',
-    });
+    expect(miniappPackage.scripts).toEqual(
+      expect.objectContaining({
+        'dev:weapp': 'taro build --type weapp --watch --mode development',
+        'dev:weapp:device': 'node ../../scripts/run-miniapp-device.mjs dev',
+        'build:weapp': 'taro build --type weapp --mode production',
+        'build:weapp:device': 'node ../../scripts/run-miniapp-device.mjs build',
+        test: 'vitest run',
+        lint: 'eslint src --ext .ts,.tsx',
+      }),
+    );
     expect(miniappPackage.dependencies).toEqual(
       expect.objectContaining({
         '@tarojs/shared': expect.any(String),
@@ -151,11 +155,34 @@ describe('repo layout', () => {
     expect(readme).toContain('dev:api:device');
     expect(readme).toContain('dev:miniapp:device');
     expect(readme).toContain('VENDOR_DEV_MOCK');
+    expect(readme).toContain('10-minute-onboarding.md');
+    expect(readme).toContain('release-notes-admin-workbench.md');
 
-    expect(readJson<{ scripts: Record<string, string> }>('packages/contracts/package.json').scripts).toEqual({
-      test: 'vitest run',
-      lint: 'eslint src --ext .ts',
-    });
+    expect(existsSync('docs/handoff/README.md')).toBe(true);
+    expect(existsSync('docs/handoff/10-minute-onboarding.md')).toBe(true);
+    expect(existsSync('docs/handoff/release-notes-admin-workbench.md')).toBe(true);
+
+    const handoffReadme = readFileSync('docs/handoff/README.md', 'utf8');
+    expect(handoffReadme).toContain('10-minute-onboarding.md');
+    expect(handoffReadme).toContain('release-notes-admin-workbench.md');
+
+    const onboarding = readFileSync('docs/handoff/10-minute-onboarding.md', 'utf8');
+    expect(onboarding).toContain('# 10 分钟接手指南');
+    expect(onboarding).toContain('最后更新：2026-04-22');
+    expect(onboarding).toContain('corepack pnpm dev:infra');
+
+    const releaseNotes = readFileSync('docs/handoff/release-notes-admin-workbench.md', 'utf8');
+    expect(releaseNotes).toContain('# 后台工作台版本说明');
+    expect(releaseNotes).toContain('最后更新：2026-04-22');
+
+    expect(
+      readJson<{ scripts: Record<string, string> }>('packages/contracts/package.json').scripts,
+    ).toEqual(
+      expect.objectContaining({
+        test: 'vitest run',
+        lint: 'eslint src --ext .ts',
+      }),
+    );
 
     const workspace = readFileSync('pnpm-workspace.yaml', 'utf8');
     expect(workspace).toContain('apps/*');

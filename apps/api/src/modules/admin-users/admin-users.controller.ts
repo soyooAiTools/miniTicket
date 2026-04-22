@@ -9,16 +9,28 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { adminUserCreateRequestSchema } from '../../../../../packages/contracts/src';
+import {
+  adminUserCreateRequestSchema,
+  adminUserRoleUpdateRequestSchema,
+} from '../../../../../packages/contracts/src';
 import { AdminSessionGuard } from '../../common/auth/admin-session.guard';
 import { CurrentAdmin } from '../../common/auth/current-admin.decorator';
 
 import { AdminUsersService } from './admin-users.service';
 
+type CurrentAdminUser = {
+  id: string;
+  role: 'ADMIN' | 'OPERATIONS';
+};
+
 type CreateAdminUserBody = {
   email: string;
   name: string;
   password: string;
+  role: 'ADMIN' | 'OPERATIONS';
+};
+
+type UpdateAdminUserRoleBody = {
   role: 'ADMIN' | 'OPERATIONS';
 };
 
@@ -31,6 +43,16 @@ function parseCreateAdminUserBody(body: unknown): CreateAdminUserBody {
 
   if (!parsed.success) {
     throw new BadRequestException('账号信息不完整或格式不正确，请检查后重试。');
+  }
+
+  return parsed.data;
+}
+
+function parseUpdateAdminUserRoleBody(body: unknown): UpdateAdminUserRoleBody {
+  const parsed = adminUserRoleUpdateRequestSchema.safeParse(body);
+
+  if (!parsed.success) {
+    throw new BadRequestException('Invalid admin user role payload.');
   }
 
   return parsed.data;
@@ -61,20 +83,41 @@ export class AdminUsersController {
   }
 
   @Post()
-  createUser(@CurrentAdmin() admin: { id: string }, @Body() body: unknown) {
+  createUser(@CurrentAdmin() admin: CurrentAdminUser, @Body() body: unknown) {
     return this.adminUsersService.createUser(
       parseCreateAdminUserBody(body),
       admin.id,
+      admin.role,
+    );
+  }
+
+  @Patch(':userId')
+  updateUserRole(
+    @CurrentAdmin() admin: CurrentAdminUser,
+    @Param('userId') userId: string,
+    @Body() body: unknown,
+  ) {
+    const payload = parseUpdateAdminUserRoleBody(body);
+    return this.adminUsersService.updateRole(
+      userId,
+      payload.role,
+      admin.id,
+      admin.role,
     );
   }
 
   @Patch(':userId/enabled')
   setEnabled(
-    @CurrentAdmin() admin: { id: string },
+    @CurrentAdmin() admin: CurrentAdminUser,
     @Param('userId') userId: string,
     @Body() body: unknown,
   ) {
     const payload = parseSetEnabledBody(body);
-    return this.adminUsersService.setEnabled(userId, payload.enabled, admin.id);
+    return this.adminUsersService.setEnabled(
+      userId,
+      payload.enabled,
+      admin.id,
+      admin.role,
+    );
   }
 }

@@ -10,28 +10,34 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAdminAuth } from '../../app/admin-auth-context';
 import {
   createAdminUser,
   getAdminUsers,
   setAdminUserEnabled,
+  updateAdminUserRole,
   type AdminUserCreateRequest,
   type AdminUserListItem,
 } from '../../services/admin-users';
 
 type CreateUserFormValues = AdminUserCreateRequest;
 
-const roleMeta: Record<
-  AdminUserListItem['role'],
-  { color: string; label: string }
-> = {
+type ActionState = {
+  disabled: boolean;
+  label: string;
+};
+
+type RoleActionState = ActionState & {
+  nextRole: AdminUserListItem['role'];
+};
+
+const roleMeta: Record<AdminUserListItem['role'], { label: string }> = {
   ADMIN: {
-    color: 'blue',
     label: '管理员',
   },
   OPERATIONS: {
-    color: 'geekblue',
     label: '运营',
   },
 };
@@ -65,13 +71,123 @@ function getEnabledMeta(enabled: boolean) {
   return enabledMeta[enabled ? 'true' : 'false'];
 }
 
+function getRoleActionState(
+  row: AdminUserListItem,
+  currentUserId: string | undefined,
+  enabledAdminCount: number,
+  isAccountMutationPending: boolean,
+  canManageAccounts: boolean,
+): RoleActionState {
+  if (!canManageAccounts) {
+    return {
+      disabled: true,
+      label: '仅管理员可操作',
+      nextRole: row.role === 'ADMIN' ? 'OPERATIONS' : 'ADMIN',
+    };
+  }
+
+  if (row.role === 'OPERATIONS') {
+    return {
+      disabled: isAccountMutationPending,
+      label: '改为管理员',
+      nextRole: 'ADMIN',
+    };
+  }
+
+  if (row.id === currentUserId) {
+    return {
+      disabled: true,
+      label: '不能降级自己',
+      nextRole: 'OPERATIONS',
+    };
+  }
+
+  if (row.enabled && enabledAdminCount <= 1) {
+    return {
+      disabled: true,
+      label: '保留最后启用管理员',
+      nextRole: 'OPERATIONS',
+    };
+  }
+
+  return {
+    disabled: isAccountMutationPending,
+    label: '改为运营',
+    nextRole: 'OPERATIONS',
+  };
+}
+
+function getEnabledActionState(
+  row: AdminUserListItem,
+  currentUserId: string | undefined,
+  enabledAdminCount: number,
+  isAccountMutationPending: boolean,
+  canManageAccounts: boolean,
+): ActionState {
+  if (!canManageAccounts) {
+    return {
+      disabled: true,
+      label: '仅管理员可操作',
+    };
+  }
+
+  if (!row.enabled) {
+    return {
+      disabled: isAccountMutationPending,
+      label: '启用',
+    };
+  }
+
+  if (row.id === currentUserId) {
+    return {
+      disabled: true,
+      label: '不能停用自己',
+    };
+  }
+
+  if (row.role === 'ADMIN' && enabledAdminCount <= 1) {
+    return {
+      disabled: true,
+      label: '保留最后启用管理员',
+    };
+  }
+
+  return {
+    disabled: isAccountMutationPending,
+    label: '停用',
+  };
+}
+
 export function UsersPage() {
+  const { session } = useAdminAuth();
   const [form] = Form.useForm<CreateUserFormValues>();
   const [rows, setRows] = useState<AdminUserListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [busyUserIds, setBusyUserIds] = useState<string[]>([]);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const accountMutationLockRef = useRef(false);
+
+  const canManageAccounts = session?.user.role === 'ADMIN';
+
+  const summary = useMemo(() => {
+    const adminCount = rows.filter((row) => row.role === 'ADMIN').length;
+    const operationsCount = rows.filter((row) => row.role === 'OPERATIONS').length;
+    const enabledCount = rows.filter((row) => row.enabled).length;
+    const enabledAdminCount = rows.filter(
+      (row) => row.enabled && row.role === 'ADMIN',
+    ).length;
+
+    return {
+      adminCount,
+      enabledAdminCount,
+      enabledCount,
+      operationsCount,
+      total: rows.length,
+    };
+  }, [rows]);
+
+  const isAccountMutationPending = busyUserId !== null;
 
   async function loadUsers() {
     setIsLoading(true);
@@ -91,6 +207,10 @@ export function UsersPage() {
   }, []);
 
   async function handleCreate(values: CreateUserFormValues) {
+    if (!canManageAccounts) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -105,35 +225,75 @@ export function UsersPage() {
     }
   }
 
-  async function handleToggleEnabled(row: AdminUserListItem) {
-    const nextEnabled = !row.enabled;
+  async function runAccountMutation(
+    rowId: string,
+    mutation: () => Promise<void>,
+    fallbackMessage: string,
+  ) {
+    if (accountMutationLockRef.current || !canManageAccounts) {
+      return;
+    }
 
-    setBusyUserIds((current) =>
-      current.includes(row.id) ? current : [...current, row.id],
-    );
+    accountMutationLockRef.current = true;
+    setBusyUserId(rowId);
 
     try {
-      await setAdminUserEnabled(row.id, nextEnabled);
+      await mutation();
       await loadUsers();
-    } catch (toggleError) {
-      setError(formatErrorMessage(toggleError, '更新账号状态失败，请稍后重试。'));
+    } catch (mutationError) {
+      setError(formatErrorMessage(mutationError, fallbackMessage));
     } finally {
-      setBusyUserIds((current) => current.filter((id) => id !== row.id));
+      accountMutationLockRef.current = false;
+      setBusyUserId(null);
     }
   }
 
-  const summary = useMemo(() => {
-    const adminCount = rows.filter((row) => row.role === 'ADMIN').length;
-    const operationsCount = rows.filter((row) => row.role === 'OPERATIONS').length;
-    const enabledCount = rows.filter((row) => row.enabled).length;
+  async function handleToggleEnabled(row: AdminUserListItem) {
+    const enabledAction = getEnabledActionState(
+      row,
+      session?.user.id,
+      summary.enabledAdminCount,
+      isAccountMutationPending,
+      canManageAccounts,
+    );
 
-    return {
-      adminCount,
-      enabledCount,
-      operationsCount,
-      total: rows.length,
-    };
-  }, [rows]);
+    if (enabledAction.disabled) {
+      return;
+    }
+
+    await runAccountMutation(
+      row.id,
+      async () => {
+        await setAdminUserEnabled(row.id, !row.enabled);
+      },
+      '更新账号状态失败，请稍后重试。',
+    );
+  }
+
+  async function handleToggleRole(
+    row: AdminUserListItem,
+    nextRole: AdminUserListItem['role'],
+  ) {
+    const roleAction = getRoleActionState(
+      row,
+      session?.user.id,
+      summary.enabledAdminCount,
+      isAccountMutationPending,
+      canManageAccounts,
+    );
+
+    if (roleAction.disabled || roleAction.nextRole !== nextRole) {
+      return;
+    }
+
+    await runAccountMutation(
+      row.id,
+      async () => {
+        await updateAdminUserRole(row.id, nextRole);
+      },
+      '更新账号角色失败，请稍后重试。',
+    );
+  }
 
   return (
     <div className='admin-users'>
@@ -143,7 +303,7 @@ export function UsersPage() {
             账号管理
           </Typography.Title>
           <Typography.Paragraph className='admin-page__subtitle'>
-            在这里维护后台账号的创建、启停和角色可见信息。
+            在这里维护后台账号的创建、启停和角色信息。
           </Typography.Paragraph>
         </div>
 
@@ -159,6 +319,9 @@ export function UsersPage() {
       </header>
 
       {error ? <Alert message={error} showIcon type='error' /> : null}
+      {!canManageAccounts ? (
+        <Alert message='仅管理员可管理账号' showIcon type='info' />
+      ) : null}
 
       <Card className='admin-users__panel' variant='borderless'>
         <div className='admin-users__panel-head'>
@@ -167,7 +330,7 @@ export function UsersPage() {
               新增账号
             </Typography.Title>
             <Typography.Text className='admin-users__panel-subtitle'>
-              创建时可以直接指定角色，后续只保留启用/停用操作。
+              创建时可以直接指定角色，后续可改角色、启停。
             </Typography.Text>
           </div>
         </div>
@@ -187,7 +350,7 @@ export function UsersPage() {
                 { type: 'email', message: '请输入有效的邮箱地址' },
               ]}
             >
-              <Input placeholder='请输入邮箱地址' />
+              <Input disabled={!canManageAccounts} placeholder='请输入邮箱地址' />
             </Form.Item>
 
             <Form.Item
@@ -195,7 +358,7 @@ export function UsersPage() {
               name='name'
               rules={[{ required: true, message: '请输入姓名' }]}
             >
-              <Input placeholder='超级管理员' />
+              <Input disabled={!canManageAccounts} placeholder='超级管理员' />
             </Form.Item>
 
             <Form.Item
@@ -206,7 +369,7 @@ export function UsersPage() {
                 { min: 8, message: '密码至少 8 位' },
               ]}
             >
-              <Input.Password placeholder='请输入初始密码' />
+              <Input.Password disabled={!canManageAccounts} placeholder='请输入初始密码' />
             </Form.Item>
 
             <Form.Item
@@ -215,6 +378,7 @@ export function UsersPage() {
               rules={[{ required: true, message: '请选择账号角色' }]}
             >
               <Radio.Group
+                disabled={!canManageAccounts}
                 options={[
                   { label: '管理员账号', value: 'ADMIN' },
                   { label: '运营账号', value: 'OPERATIONS' },
@@ -224,10 +388,17 @@ export function UsersPage() {
           </div>
 
           <Space className='admin-users__form-actions' wrap>
-            <Button htmlType='submit' loading={isSubmitting} type='primary'>
+            <Button
+              disabled={!canManageAccounts}
+              htmlType='submit'
+              loading={isSubmitting}
+              type='primary'
+            >
               创建账号
             </Button>
-            <Button onClick={() => form.resetFields()}>清空表单</Button>
+            <Button disabled={!canManageAccounts} onClick={() => form.resetFields()}>
+              清空表单
+            </Button>
           </Space>
         </Form>
       </Card>
@@ -239,7 +410,7 @@ export function UsersPage() {
               账号列表
             </Typography.Title>
             <Typography.Text className='admin-users__panel-subtitle'>
-              这里只保留最小可用的管理动作：查看角色、启用和停用。
+              这里可查看角色，并直接切换角色或启停账号。
             </Typography.Text>
           </div>
         </div>
@@ -261,11 +432,31 @@ export function UsersPage() {
               dataIndex: 'role',
               key: 'role',
               title: '角色',
-              render: (_value: AdminUserListItem['role'], record) => (
-                <Tag color={roleMeta[record.role].color}>
-                  {roleMeta[record.role].label}
-                </Tag>
-              ),
+              render: (_value: AdminUserListItem['role'], record) => {
+                const roleAction = getRoleActionState(
+                  record,
+                  session?.user.id,
+                  summary.enabledAdminCount,
+                  isAccountMutationPending,
+                  canManageAccounts,
+                );
+
+                return (
+                  <Space direction='vertical' size={0}>
+                    <Tag color={record.role === 'ADMIN' ? 'blue' : 'geekblue'}>
+                      {roleMeta[record.role].label}
+                    </Tag>
+                    <Button
+                      disabled={roleAction.disabled}
+                      loading={busyUserId === record.id}
+                      onClick={() => void handleToggleRole(record, roleAction.nextRole)}
+                      type='link'
+                    >
+                      {roleAction.label}
+                    </Button>
+                  </Space>
+                );
+              },
             },
             {
               dataIndex: 'enabled',
@@ -292,16 +483,27 @@ export function UsersPage() {
             {
               key: 'actions',
               title: '操作',
-              render: (_value: unknown, record) => (
-                <Button
-                  danger={record.enabled}
-                  loading={busyUserIds.includes(record.id)}
-                  onClick={() => void handleToggleEnabled(record)}
-                  type='link'
-                >
-                  {record.enabled ? '停用' : '启用'}
-                </Button>
-              ),
+              render: (_value: unknown, record) => {
+                const enabledAction = getEnabledActionState(
+                  record,
+                  session?.user.id,
+                  summary.enabledAdminCount,
+                  isAccountMutationPending,
+                  canManageAccounts,
+                );
+
+                return (
+                  <Button
+                    danger={record.enabled}
+                    disabled={enabledAction.disabled}
+                    loading={busyUserId === record.id}
+                    onClick={() => void handleToggleEnabled(record)}
+                    type='link'
+                  >
+                    {enabledAction.label}
+                  </Button>
+                );
+              },
             },
           ]}
           dataSource={rows}

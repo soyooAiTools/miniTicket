@@ -146,6 +146,23 @@ a {
   color: #6f7890;
 }
 
+.admin-route-loading {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  padding: 40px 24px;
+  color: #677189;
+}
+
+.admin-route-loading--fullscreen {
+  min-height: 100vh;
+}
+
+.admin-route-loading__text {
+  color: #677189;
+}
+
 .admin-users {
   display: grid;
   gap: 16px;

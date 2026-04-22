@@ -28,12 +28,18 @@ export const adminUserUpdateRequestSchema = z
     id: z.string().min(1),
     email: z.string().email().optional(),
     name: z.string().min(1).optional(),
-    role: adminRoleSchema.optional(),
     password: z.string().min(8).optional(),
     enabled: z.boolean().optional(),
+  })
+  .strict();
+
+export const adminUserRoleUpdateRequestSchema = z
+  .object({
+    role: adminRoleSchema,
   })
   .strict();
 
 export type AdminUserListItem = z.infer<typeof adminUserListItemSchema>;
 export type AdminUserCreateRequest = z.infer<typeof adminUserCreateRequestSchema>;
 export type AdminUserUpdateRequest = z.infer<typeof adminUserUpdateRequestSchema>;
+export type AdminUserRoleUpdateRequest = z.infer<typeof adminUserRoleUpdateRequestSchema>;

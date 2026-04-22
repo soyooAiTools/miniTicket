@@ -75,9 +75,11 @@ export {
 export {
   adminUserListItemSchema,
   adminUserCreateRequestSchema,
+  adminUserRoleUpdateRequestSchema,
   adminUserUpdateRequestSchema,
   type AdminUserListItem,
   type AdminUserCreateRequest,
+  type AdminUserRoleUpdateRequest,
   type AdminUserUpdateRequest,
 } from './admin-user';
 export {

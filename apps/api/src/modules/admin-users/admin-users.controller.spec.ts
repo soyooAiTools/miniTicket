@@ -7,6 +7,7 @@ describe('AdminUsersController', () => {
   const adminUsersServiceMock = {
     createUser: jest.fn(),
     listUsers: jest.fn(),
+    updateRole: jest.fn(),
     setEnabled: jest.fn(),
   } as unknown as AdminUsersService;
 
@@ -19,7 +20,7 @@ describe('AdminUsersController', () => {
 
     expect(() =>
       controller.createUser(
-        { id: 'admin_001' },
+        { id: 'admin_001', role: 'ADMIN' },
         {
           email: 'new-admin@example.com',
           name: '新管理员',
@@ -42,7 +43,7 @@ describe('AdminUsersController', () => {
 
     const controller = new AdminUsersController(adminUsersServiceMock);
     const result = await controller.createUser(
-      { id: 'admin_001' },
+      { id: 'admin_001', role: 'ADMIN' },
       {
         email: 'new-admin@example.com',
         name: '新管理员',
@@ -59,6 +60,7 @@ describe('AdminUsersController', () => {
         role: 'ADMIN',
       },
       'admin_001',
+      'ADMIN',
     );
     expect(result).toEqual({
       email: 'new-admin@example.com',
@@ -66,6 +68,91 @@ describe('AdminUsersController', () => {
       id: 'admin_002',
       name: '新管理员',
       role: 'ADMIN',
+    });
+  });
+
+  it('rejects admin-user role payloads with an invalid role body', async () => {
+    const controller = new AdminUsersController(adminUsersServiceMock);
+
+    expect(() =>
+      controller.updateUserRole(
+        { id: 'admin_001', role: 'ADMIN' },
+        'admin_002',
+        {
+          role: 'SUPERADMIN',
+        },
+      ),
+    ).toThrow(BadRequestException);
+    expect(adminUsersServiceMock.updateRole).not.toHaveBeenCalled();
+  });
+
+  it('delegates valid admin-user role payloads to the service', async () => {
+    (adminUsersServiceMock.updateRole as jest.Mock).mockResolvedValue({
+      email: 'ops2@miniticket.local',
+      enabled: true,
+      id: 'admin_002',
+      name: '新管理员',
+      role: 'OPERATIONS',
+    });
+
+    const controller = new AdminUsersController(adminUsersServiceMock);
+    const result = await controller.updateUserRole(
+      { id: 'admin_001', role: 'ADMIN' },
+      'admin_002',
+      {
+        role: 'OPERATIONS',
+      },
+    );
+
+    expect(adminUsersServiceMock.updateRole).toHaveBeenCalledWith(
+      'admin_002',
+      'OPERATIONS',
+      'admin_001',
+      'ADMIN',
+    );
+    expect(result).toEqual({
+      email: 'ops2@miniticket.local',
+      enabled: true,
+      id: 'admin_002',
+      name: '新管理员',
+      role: 'OPERATIONS',
+    });
+  });
+
+  it('delegates enabled updates with the actor role', async () => {
+    (adminUsersServiceMock.setEnabled as jest.Mock).mockResolvedValue({
+      createdAt: '2026-04-21T08:00:00.000Z',
+      email: 'ops2@miniticket.local',
+      enabled: false,
+      id: 'admin_002',
+      name: '新管理员',
+      role: 'OPERATIONS',
+      updatedAt: '2026-04-21T09:00:00.000Z',
+    });
+
+    const controller = new AdminUsersController(adminUsersServiceMock);
+    const result = await controller.setEnabled(
+      { id: 'admin_001', role: 'ADMIN' },
+      'admin_002',
+      {
+        enabled: false,
+      },
+    );
+
+    expect(adminUsersServiceMock.setEnabled).toHaveBeenCalledWith(
+      'admin_002',
+      false,
+      'admin_001',
+      'ADMIN',
+    );
+    expect(result).toEqual({
+      createdAt: '2026-04-21T08:00:00.000Z',
+      email: 'ops2@miniticket.local',
+      enabled: false,
+      id: 'admin_002',
+      name: '新管理员',
+      role: 'OPERATIONS',
+      updatedAt: '2026-04-21T09:00:00.000Z',
     });
   });
 });

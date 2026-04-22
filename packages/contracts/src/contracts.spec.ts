@@ -13,6 +13,7 @@ import {
   adminSessionSchema,
   adminUserCreateRequestSchema,
   adminUserListItemSchema,
+  adminUserRoleUpdateRequestSchema,
   adminUserUpdateRequestSchema,
   eventCatalogSummarySchema,
   eventDetailSchema,
@@ -279,6 +280,9 @@ describe('shared contracts', () => {
             'E-ticket confirmation arrives no later than 3 days before the show.',
         },
         refundEntryEnabled: true,
+        payments: [],
+        refundRequests: [],
+        userId: 'user_001',
         notes: [
           {
             id: 'note_001',
@@ -374,6 +378,33 @@ describe('shared contracts', () => {
     });
   });
 
+  it('rejects an admin user update payload with role changes', () => {
+    expect(() =>
+      adminUserUpdateRequestSchema.parse({
+        id: 'admin_001',
+        role: 'ADMIN',
+      }),
+    ).toThrow();
+  });
+
+  it('validates an admin user role update payload', () => {
+    expect(
+      adminUserRoleUpdateRequestSchema.parse({
+        role: 'OPERATIONS',
+      }),
+    ).toMatchObject({
+      role: 'OPERATIONS',
+    });
+  });
+
+  it('rejects an admin user role update payload with an unsupported role', () => {
+    expect(() =>
+      adminUserRoleUpdateRequestSchema.parse({
+        role: 'SUPERADMIN',
+      }),
+    ).toThrow();
+  });
+
   it('validates an admin user list item payload', () => {
     expect(
       adminUserListItemSchema.parse({
@@ -400,11 +431,15 @@ describe('shared contracts', () => {
         orderId: 'ord_001',
         orderNumber: 'AT202604210001',
         status: 'REVIEWING',
+        orderStatus: 'PAID_PENDING_FULFILLMENT',
         amount: 80000,
         currency: 'CNY',
         reason: 'USER_IDENTITY_ERROR',
         requesterName: '张三',
         requestedAt: '2026-04-21T08:00:00.000Z',
+        requestedAmount: 80000,
+        serviceFee: 0,
+        userId: 'user_001',
       }),
     ).toMatchObject({
       status: 'REVIEWING',
@@ -420,11 +455,15 @@ describe('shared contracts', () => {
         orderId: 'ord_001',
         orderNumber: 'AT202604210001',
         status: 'REVIEWING',
+        orderStatus: 'PAID_PENDING_FULFILLMENT',
         amount: 80000,
         currency: 'CNY',
         reason: 'USER_IDENTITY_ERROR',
         requesterName: '张三',
         requestedAt: '2026-04-21T08:00:00.000Z',
+        requestedAmount: 80000,
+        serviceFee: 0,
+        userId: 'user_001',
       }),
     ).toThrow();
   });
@@ -442,11 +481,15 @@ describe('shared contracts', () => {
         orderId: 'ord_001',
         orderNumber: 'AT202604210001',
         status: 'APPROVED',
+        orderStatus: 'PAID_PENDING_FULFILLMENT',
         amount: 80000,
         currency: 'CNY',
         reason: 'USER_IDENTITY_ERROR',
         requesterName: '张三',
         requestedAt: '2026-04-21T08:00:00.000Z',
+        requestedAmount: 80000,
+        serviceFee: 0,
+        userId: 'user_001',
         reviewedByUserId: 'user_ops_001',
         reviewNote: '实名问题已核验。',
         rejectionReason: '不符合退款条件',

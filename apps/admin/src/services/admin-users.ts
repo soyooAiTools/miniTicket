@@ -1,5 +1,6 @@
 import {
   adminUserListItemSchema,
+  adminUserRoleUpdateRequestSchema,
   type AdminUserCreateRequest,
   type AdminUserListItem,
 } from '@ticketing/contracts';
@@ -28,6 +29,18 @@ export async function setAdminUserEnabled(
     `/admin/users/${userId}/enabled`,
     'PATCH',
     { enabled },
+  );
+  return adminUserListItemSchema.parse(payload);
+}
+
+export async function updateAdminUserRole(
+  userId: string,
+  role: AdminUserListItem['role'],
+): Promise<AdminUserListItem> {
+  const payload = await jsonRequest<unknown>(
+    `/admin/users/${userId}`,
+    'PATCH',
+    adminUserRoleUpdateRequestSchema.parse({ role }),
   );
   return adminUserListItemSchema.parse(payload);
 }
