@@ -28,6 +28,8 @@ function buildApiUrl(path: string) {
   const baseUrl = readBrowserSetting(API_BASE_URL_STORAGE_KEY) ?? DEFAULT_API_BASE_URL;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
+  // 这里只负责拼接 API 地址；管理后台登录态仍依赖浏览器 cookie，
+  // 所以切到别的环境时，还需要同站点部署、反向代理或可用的 cookie 配置配合。
   return `${baseUrl}${normalizedPath}`;
 }
 

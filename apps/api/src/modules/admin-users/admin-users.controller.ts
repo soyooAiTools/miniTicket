@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { adminUserCreateRequestSchema } from '../../../../../packages/contracts/src';
 import { AdminSessionGuard } from '../../common/auth/admin-session.guard';
 import { CurrentAdmin } from '../../common/auth/current-admin.decorator';
 
@@ -26,34 +27,13 @@ type SetAdminUserEnabledBody = {
 };
 
 function parseCreateAdminUserBody(body: unknown): CreateAdminUserBody {
-  if (!body || typeof body !== 'object') {
-    throw new BadRequestException('账号信息不完整。');
+  const parsed = adminUserCreateRequestSchema.safeParse(body);
+
+  if (!parsed.success) {
+    throw new BadRequestException('账号信息不完整或格式不正确，请检查后重试。');
   }
 
-  const email = (body as { email?: unknown }).email;
-  const name = (body as { name?: unknown }).name;
-  const password = (body as { password?: unknown }).password;
-  const role = (body as { role?: unknown }).role;
-
-  if (
-    typeof email !== 'string' ||
-    typeof name !== 'string' ||
-    typeof password !== 'string' ||
-    (role !== 'ADMIN' && role !== 'OPERATIONS')
-  ) {
-    throw new BadRequestException('账号信息不完整。');
-  }
-
-  if (!email.trim() || !name.trim() || !password.trim()) {
-    throw new BadRequestException('账号信息不完整。');
-  }
-
-  return {
-    email,
-    name,
-    password,
-    role,
-  };
+  return parsed.data;
 }
 
 function parseSetEnabledBody(body: unknown): SetAdminUserEnabledBody {
