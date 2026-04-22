@@ -750,6 +750,126 @@ describe('AdminEventsService', () => {
     });
   });
 
+  it('updates metadata without rewriting sessions when an event already has orders', async () => {
+    (prismaMock.event.findUnique as jest.Mock).mockResolvedValue(
+      buildPublishableEvent(),
+    );
+    (prismaMock.orderItem.count as jest.Mock).mockResolvedValue(3);
+    (prismaMock.event.update as jest.Mock).mockResolvedValue({
+      city: 'Shanghai',
+      coverImageUrl: null,
+      description: 'Updated event description',
+      id: 'event_001',
+      published: true,
+      title: 'Updated Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+      sessions: [
+        {
+          endsAt: new Date('2026-05-01T13:30:00.000Z'),
+          id: 'session_001',
+          name: '2026-05-01 19:30',
+          saleEndsAt: new Date('2026-05-01T11:00:00.000Z'),
+          saleStartsAt: new Date('2026-04-18T02:00:00.000Z'),
+          startsAt: new Date('2026-05-01T11:30:00.000Z'),
+          ticketTiers: [
+            {
+              id: 'tier_vip',
+              inventory: 120,
+              name: 'VIP Standing',
+              price: 799,
+              purchaseLimit: 4,
+              refundable: true,
+              refundDeadlineAt: new Date('2026-04-29T16:00:00.000Z'),
+              requiresRealName: true,
+              sortOrder: 1,
+              ticketType: 'E_TICKET',
+            },
+          ],
+        },
+      ],
+    });
+
+    const service = new AdminEventsService(prismaMock);
+    const result = await service.updateEvent('event_001', {
+      city: 'Shanghai',
+      description: 'Updated event description',
+      id: 'event_001',
+      published: true,
+      sessions: [
+        {
+          id: 'session_001',
+          name: '2026-05-01 19:30',
+          startsAt: '2026-05-01T11:30:00.000Z',
+          endsAt: '2026-05-01T13:30:00.000Z',
+          saleStartsAt: '2026-04-18T02:00:00.000Z',
+          saleEndsAt: '2026-05-01T11:00:00.000Z',
+          tiers: [
+            {
+              id: 'tier_vip',
+              inventory: 120,
+              name: 'VIP Standing',
+              price: 799,
+              purchaseLimit: 4,
+              refundable: true,
+              refundDeadlineAt: '2026-04-29T16:00:00.000Z',
+              requiresRealName: true,
+              sortOrder: 1,
+              ticketType: 'E_TICKET',
+            },
+          ],
+        },
+      ],
+      title: 'Updated Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+    });
+
+    expect(prismaMock.event.update).toHaveBeenCalledWith({
+      data: expect.not.objectContaining({
+        sessions: expect.anything(),
+      }),
+      select: expect.any(Object),
+      where: {
+        id: 'event_001',
+      },
+    });
+    expect(result).toEqual({
+      city: 'Shanghai',
+      coverImageUrl: undefined,
+      description: 'Updated event description',
+      id: 'event_001',
+      published: true,
+      sessions: [
+        {
+          endsAt: '2026-05-01T13:30:00.000Z',
+          id: 'session_001',
+          name: '2026-05-01 19:30',
+          saleEndsAt: '2026-05-01T11:00:00.000Z',
+          saleStartsAt: '2026-04-18T02:00:00.000Z',
+          startsAt: '2026-05-01T11:30:00.000Z',
+          tiers: [
+            {
+              id: 'tier_vip',
+              inventory: 120,
+              name: 'VIP Standing',
+              price: 799,
+              purchaseLimit: 4,
+              refundable: true,
+              refundDeadlineAt: '2026-04-29T16:00:00.000Z',
+              requiresRealName: true,
+              sortOrder: 1,
+              ticketType: 'E_TICKET',
+            },
+          ],
+        },
+      ],
+      title: 'Updated Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+    });
+  });
+
   it('maps missing event updates to a Chinese not found error', async () => {
     (prismaMock.event.findUnique as jest.Mock).mockResolvedValue(
       buildPublishableEvent(),
@@ -842,6 +962,78 @@ describe('AdminEventsService', () => {
       },
     });
     expect(prismaMock.event.update).toHaveBeenNthCalledWith(2, {
+      data: {
+        published: false,
+      },
+      select: expect.any(Object),
+      where: {
+        id: 'event_001',
+      },
+    });
+  });
+
+  it('allows unpublishing an incomplete event', async () => {
+    (prismaMock.event.findUnique as jest.Mock).mockResolvedValue({
+      city: 'Shanghai',
+      coverImageUrl: 'https://example.com/poster.jpg',
+      description: 'Livehouse night',
+      id: 'event_001',
+      published: false,
+      title: 'Beta Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+      sessions: [
+        {
+          endsAt: new Date('2026-05-01T13:30:00.000Z'),
+          id: 'session_001',
+          name: '2026-05-01 19:30',
+          saleEndsAt: undefined,
+          saleStartsAt: undefined,
+          startsAt: new Date('2026-05-01T11:30:00.000Z'),
+          ticketTiers: [
+            {
+              id: 'tier_vip',
+              inventory: 120,
+              name: 'VIP Standing',
+              price: 799,
+              purchaseLimit: 4,
+              refundable: true,
+              refundDeadlineAt: new Date('2026-04-29T16:00:00.000Z'),
+              requiresRealName: true,
+              sortOrder: 1,
+              ticketType: 'E_TICKET',
+            },
+          ],
+        },
+      ],
+    });
+    (prismaMock.event.update as jest.Mock).mockResolvedValue({
+      city: 'Shanghai',
+      coverImageUrl: null,
+      description: 'Livehouse night',
+      id: 'event_001',
+      published: false,
+      title: 'Beta Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+      sessions: [],
+    });
+
+    const service = new AdminEventsService(prismaMock);
+
+    await expect(service.unpublishEvent('event_001')).resolves.toEqual({
+      city: 'Shanghai',
+      coverImageUrl: undefined,
+      description: 'Livehouse night',
+      id: 'event_001',
+      published: false,
+      sessions: [],
+      title: 'Beta Livehouse Night',
+      venueAddress: 'No. 3000 Longteng Avenue',
+      venueName: 'West Bund Arena',
+    });
+
+    expect(prismaMock.event.update).toHaveBeenCalledWith({
       data: {
         published: false,
       },

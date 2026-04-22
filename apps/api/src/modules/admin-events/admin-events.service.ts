@@ -617,6 +617,30 @@ function buildEventUpdateData(input: AdminEventEditor) {
   };
 }
 
+function buildEventMetadataOnlyUpdateData(input: AdminEventEditor) {
+  const derived = validateAndAnalyzeEventLifecycle(
+    buildInputEventLifecycleSource(input),
+    {
+      requireBasicInfo: true,
+      requireSaleWindows: false,
+    },
+  );
+
+  return {
+    city: input.city,
+    ...(input.coverImageUrl === undefined
+      ? {}
+      : { coverImageUrl: input.coverImageUrl }),
+    ...(input.description === undefined ? {} : { description: input.description }),
+    minPrice: derived.minPrice,
+    ...(input.published === undefined ? {} : { published: input.published }),
+    refundEntryEnabled: derived.refundEntryEnabled,
+    title: input.title,
+    venueAddress: input.venueAddress,
+    venueName: input.venueName,
+  };
+}
+
 @Injectable()
 export class AdminEventsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -661,8 +685,9 @@ export class AdminEventsService {
     input: AdminEventEditor,
   ): Promise<AdminEventEditor> {
     const currentEvent = await this.loadEventForValidation(eventId);
+    const structureChanged = hasDifferentEventStructure(currentEvent, input);
 
-    if (hasDifferentEventStructure(currentEvent, input)) {
+    if (structureChanged) {
       const orderCount = await this.prisma.orderItem.count({
         where: {
           ticketTier: {
@@ -681,8 +706,12 @@ export class AdminEventsService {
     }
 
     try {
+      const data = structureChanged
+        ? buildEventUpdateData(input)
+        : buildEventMetadataOnlyUpdateData(input);
+
       const event = await this.prisma.event.update({
-        data: buildEventUpdateData(input),
+        data,
         select: adminEventDetailSelect,
         where: {
           id: eventId,
@@ -715,14 +744,15 @@ export class AdminEventsService {
     published: boolean,
   ): Promise<AdminEventEditor> {
     const currentEvent = await this.loadEventForValidation(eventId);
-
-    validateAndAnalyzeEventLifecycle(
-      buildCurrentEventLifecycleSource(currentEvent),
-      {
-        requireBasicInfo: true,
-        requireSaleWindows: true,
-      },
-    );
+    if (published) {
+      validateAndAnalyzeEventLifecycle(
+        buildCurrentEventLifecycleSource(currentEvent),
+        {
+          requireBasicInfo: true,
+          requireSaleWindows: true,
+        },
+      );
+    }
 
     try {
       const event = await this.prisma.event.update({
