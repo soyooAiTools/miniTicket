@@ -66,7 +66,6 @@ export const adminRefundRejectRequestSchema = z
 export const adminRefundProcessRequestSchema = z
   .object({
     refundId: z.string().min(1),
-    note: z.string().min(1).optional(),
   })
   .strict();
 

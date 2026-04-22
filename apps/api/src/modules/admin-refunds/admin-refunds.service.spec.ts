@@ -288,9 +288,6 @@ describe('AdminRefundsService', () => {
       service.processRefund(
         'refund_1',
         {
-          note: '  已和供应商确认  ',
-        },
-        {
           email: 'ops@miniticket.local',
           id: 'admin_1',
           name: '超级管理员',
@@ -356,9 +353,6 @@ describe('AdminRefundsService', () => {
     await expect(
       service.processRefund(
         'refund_1',
-        {
-          note: '已处理',
-        },
         {
           email: 'ops@miniticket.local',
           id: 'admin_1',

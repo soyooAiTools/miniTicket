@@ -103,10 +103,6 @@ type AdminRefundDetail = {
   userId: string;
 };
 
-type AdminRefundActionNote = {
-  note?: string;
-};
-
 type AdminRefundRejectInput = {
   reason: string;
 };
@@ -351,7 +347,7 @@ export class AdminRefundsService {
 
   async approveRefund(
     refundId: string,
-    input: AdminRefundActionNote,
+    input: { note?: string },
     admin: AdminActor,
   ): Promise<AdminRefundDetail> {
     const refundRequest = await this.loadRefundRequest(refundId);
@@ -403,12 +399,10 @@ export class AdminRefundsService {
 
   async processRefund(
     refundId: string,
-    input: AdminRefundActionNote,
     admin: AdminActor,
   ): Promise<AdminRefundDetail> {
     const refundRequest = await this.loadRefundRequest(refundId);
     this.assertApproved(refundRequest, '当前退款状态不允许发起退款处理。');
-    void input.note;
 
     await this.upstreamTicketingGateway.submitRefund({
       amount: refundRequest.refundAmount,

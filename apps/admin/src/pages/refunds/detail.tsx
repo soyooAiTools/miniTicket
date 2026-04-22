@@ -172,10 +172,7 @@ export function RefundDetailPage() {
     setError(undefined);
 
     try {
-      const note = form.getFieldValue('note') as string | undefined;
-      await processAdminRefund(refundId, {
-        note: note?.trim() ? note.trim() : undefined,
-      });
+      await processAdminRefund(refundId);
       setNotice('退款处理已发起。');
       setReloadVersion((value) => value + 1);
     } catch (submitError) {

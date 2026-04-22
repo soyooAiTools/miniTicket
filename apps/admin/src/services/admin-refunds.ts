@@ -1,12 +1,10 @@
 import {
   adminRefundApproveRequestSchema,
   adminRefundDetailSchema,
-  adminRefundProcessRequestSchema,
   adminRefundQueueItemSchema,
   adminRefundRejectRequestSchema,
   type AdminRefundApproveRequest,
   type AdminRefundDetail,
-  type AdminRefundProcessRequest,
   type AdminRefundQueueItem,
   type AdminRefundRejectRequest,
 } from '@ticketing/contracts';
@@ -16,7 +14,6 @@ import { jsonRequest, request } from './request';
 export type {
   AdminRefundApproveRequest,
   AdminRefundDetail,
-  AdminRefundProcessRequest,
   AdminRefundQueueItem,
   AdminRefundRejectRequest,
 } from '@ticketing/contracts';
@@ -61,12 +58,11 @@ export async function rejectAdminRefund(
 
 export async function processAdminRefund(
   refundId: string,
-  input: Omit<AdminRefundProcessRequest, 'refundId'>,
 ): Promise<AdminRefundDetail> {
   const payload = await jsonRequest<unknown>(
     `/admin/refunds/${refundId}/process`,
     'POST',
-    input,
+    {},
   );
   return adminRefundDetailSchema.parse(payload);
 }

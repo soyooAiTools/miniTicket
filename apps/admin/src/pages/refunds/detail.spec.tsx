@@ -108,9 +108,7 @@ describe('RefundDetailPage', () => {
     await user.click(screen.getByRole('button', { name: '发起处理' }));
 
     await waitFor(() => {
-      expect(processAdminRefund).toHaveBeenCalledWith('refund_1', {
-        note: '准备提交渠道处理',
-      });
+      expect(processAdminRefund).toHaveBeenCalledWith('refund_1');
     });
   });
 
