@@ -200,23 +200,335 @@ function normalizeListItem(event: PrismaAdminEventListRow): AdminEventListItem {
   };
 }
 
-function assertHasTiers(input: AdminEventDraft | AdminEventEditor) {
-  if (input.sessions.some((session) => session.tiers.length === 0)) {
-    throw new BadRequestException('每个场次至少需要配置一个区域票档。');
-  }
+type EventLifecycleTier = {
+  inventory: number;
+  name: string;
+  price: number;
+  purchaseLimit: number;
+  refundable: boolean;
+  refundDeadlineAt?: Date | string | null;
+  requiresRealName: boolean;
+  sortOrder: number;
+  ticketType: 'E_TICKET' | 'PAPER_TICKET';
+};
+
+type EventLifecycleSession = {
+  endsAt?: Date | string | null;
+  name: string;
+  saleEndsAt?: Date | string | null;
+  saleStartsAt?: Date | string | null;
+  startsAt: Date | string;
+  tiers: EventLifecycleTier[];
+};
+
+type EventLifecycleSource = {
+  city: string;
+  coverImageUrl?: string | null;
+  description?: string | null;
+  sessions: EventLifecycleSession[];
+  title: string;
+  venueAddress?: string | null;
+  venueName: string;
+};
+
+type EventLifecycleAnalysis = {
+  minPrice: number;
+  refundEntryEnabled: boolean;
+  structure: {
+    sessions: Array<{
+      endsAt?: string;
+      name: string;
+      saleEndsAt?: string;
+      saleStartsAt?: string;
+      startsAt: string;
+      tiers: Array<{
+        inventory: number;
+        name: string;
+        price: number;
+        purchaseLimit: number;
+        refundable: boolean;
+        refundDeadlineAt?: string;
+        requiresRealName: boolean;
+        sortOrder: number;
+        ticketType: 'E_TICKET' | 'PAPER_TICKET';
+      }>;
+    }>;
+  };
+};
+
+function normalizeLifecycleText(value: string | undefined | null) {
+  return value?.trim() ?? '';
 }
 
-function deriveEventFields(input: AdminEventDraft | AdminEventEditor) {
-  const tiers = input.sessions.flatMap((session) => session.tiers);
+function toLifecycleIso(value: Date | string | null | undefined) {
+  return normalizeDate(value);
+}
 
-  if (tiers.length === 0) {
+function compareLifecycleStrings(left: string | undefined, right: string | undefined) {
+  if (left === right) {
+    return 0;
+  }
+
+  if (left === undefined) {
+    return -1;
+  }
+
+  if (right === undefined) {
+    return 1;
+  }
+
+  return left.localeCompare(right);
+}
+
+function compareLifecycleDates(
+  left: Date | string | null | undefined,
+  right: Date | string | null | undefined,
+) {
+  const leftTime = left === null || left === undefined ? undefined : new Date(left).getTime();
+  const rightTime = right === null || right === undefined ? undefined : new Date(right).getTime();
+
+  if (leftTime === rightTime) {
+    return 0;
+  }
+
+  if (leftTime === undefined) {
+    return -1;
+  }
+
+  if (rightTime === undefined) {
+    return 1;
+  }
+
+  return leftTime - rightTime;
+}
+
+function validateAndAnalyzeEventLifecycle(
+  source: EventLifecycleSource,
+  options: {
+    requireBasicInfo: boolean;
+    requireSaleWindows: boolean;
+  },
+): EventLifecycleAnalysis {
+  if (options.requireBasicInfo) {
+    if (
+      !normalizeLifecycleText(source.title) ||
+      !normalizeLifecycleText(source.city) ||
+      !normalizeLifecycleText(source.venueName) ||
+      !normalizeLifecycleText(source.venueAddress)
+    ) {
+      throw new BadRequestException('活动基础信息不完整。');
+    }
+  }
+
+  if (source.sessions.length === 0) {
+    throw new BadRequestException('活动至少需要配置一个场次。');
+  }
+
+  const structureSessions: EventLifecycleAnalysis['structure']['sessions'] = [];
+  let minPrice = Number.POSITIVE_INFINITY;
+  let refundEntryEnabled = false;
+
+  for (const session of source.sessions) {
+    if (session.tiers.length === 0) {
+      throw new BadRequestException('每个场次至少需要配置一个区域票档。');
+    }
+
+    if (options.requireSaleWindows) {
+      if (session.saleStartsAt === undefined || session.saleEndsAt === undefined) {
+        throw new BadRequestException('每个场次都需要填写开售时间和停售时间。');
+      }
+    }
+
+    if (
+      session.saleStartsAt !== undefined &&
+      session.saleEndsAt !== undefined &&
+      compareLifecycleDates(session.saleStartsAt, session.saleEndsAt) > 0
+    ) {
+      throw new BadRequestException('开售时间不能晚于停售时间。');
+    }
+
+    const seenTierNames = new Set<string>();
+    const normalizedTiers = session.tiers.map((tier) => {
+      const normalizedTierName = normalizeLifecycleText(tier.name);
+
+      if (seenTierNames.has(normalizedTierName)) {
+        throw new BadRequestException('同一场次下区域票档名称不能重复。');
+      }
+
+      seenTierNames.add(normalizedTierName);
+
+      if (
+        tier.refundDeadlineAt !== undefined &&
+        tier.refundDeadlineAt !== null &&
+        compareLifecycleDates(tier.refundDeadlineAt, session.startsAt) > 0
+      ) {
+        throw new BadRequestException('退款截止时间不能晚于场次开始时间。');
+      }
+
+      minPrice = Math.min(minPrice, tier.price);
+      refundEntryEnabled = refundEntryEnabled || tier.refundable;
+
+      return {
+        inventory: tier.inventory,
+        name: normalizedTierName,
+        price: tier.price,
+        purchaseLimit: tier.purchaseLimit,
+        refundable: tier.refundable,
+        refundDeadlineAt: toLifecycleIso(tier.refundDeadlineAt),
+        requiresRealName: tier.requiresRealName,
+        sortOrder: tier.sortOrder,
+        ticketType: tier.ticketType,
+      };
+    });
+
+    const normalizedSession = {
+      endsAt: toLifecycleIso(session.endsAt),
+      name: normalizeLifecycleText(session.name),
+      saleEndsAt: toLifecycleIso(session.saleEndsAt),
+      saleStartsAt: toLifecycleIso(session.saleStartsAt),
+      startsAt: normalizeRequiredDate(session.startsAt),
+      tiers: normalizedTiers.sort(
+        (left, right) =>
+          left.sortOrder - right.sortOrder ||
+          left.price - right.price ||
+          left.name.localeCompare(right.name),
+      ),
+    };
+
+    structureSessions.push(normalizedSession);
+  }
+
+  if (!Number.isFinite(minPrice)) {
     throw new BadRequestException('每个场次至少需要配置一个区域票档。');
   }
 
   return {
-    minPrice: Math.min(...tiers.map((tier) => tier.price)),
-    refundEntryEnabled: tiers.some((tier) => tier.refundable),
+    minPrice,
+    refundEntryEnabled,
+    structure: {
+      sessions: structureSessions.sort(
+        (left, right) =>
+          compareLifecycleDates(left.startsAt, right.startsAt) ||
+          left.name.localeCompare(right.name),
+      ),
+    },
   };
+}
+
+function buildEventStructure(source: EventLifecycleSource) {
+  return {
+    sessions: source.sessions
+      .map((session) => ({
+        endsAt: toLifecycleIso(session.endsAt),
+        name: normalizeLifecycleText(session.name),
+        saleEndsAt: toLifecycleIso(session.saleEndsAt),
+        saleStartsAt: toLifecycleIso(session.saleStartsAt),
+        startsAt: normalizeRequiredDate(session.startsAt),
+        tiers: session.tiers
+          .map((tier) => ({
+            inventory: tier.inventory,
+            name: normalizeLifecycleText(tier.name),
+            price: tier.price,
+            purchaseLimit: tier.purchaseLimit,
+            refundable: tier.refundable,
+            refundDeadlineAt: toLifecycleIso(tier.refundDeadlineAt),
+            requiresRealName: tier.requiresRealName,
+            sortOrder: tier.sortOrder,
+            ticketType: tier.ticketType,
+          }))
+          .sort(
+            (left, right) =>
+              left.sortOrder - right.sortOrder ||
+              left.price - right.price ||
+              left.name.localeCompare(right.name),
+          ),
+      }))
+      .sort(
+        (left, right) =>
+          compareLifecycleDates(left.startsAt, right.startsAt) ||
+          left.name.localeCompare(right.name),
+      ),
+  };
+}
+
+function buildCurrentEventLifecycleSource(event: PrismaAdminEvent): EventLifecycleSource {
+  return {
+    city: event.city,
+    coverImageUrl: event.coverImageUrl,
+    description: event.description,
+    sessions:
+      event.sessions?.map((session) => ({
+        endsAt: session.endsAt,
+        name: session.name,
+        saleEndsAt: session.saleEndsAt,
+        saleStartsAt: session.saleStartsAt,
+        startsAt: session.startsAt,
+        tiers: session.ticketTiers.map((tier) => ({
+          inventory: tier.inventory,
+          name: tier.name,
+          price: tier.price,
+          purchaseLimit: tier.purchaseLimit,
+          refundable: tier.refundable,
+          refundDeadlineAt: tier.refundDeadlineAt,
+          requiresRealName: tier.requiresRealName,
+          sortOrder: tier.sortOrder,
+          ticketType: tier.ticketType,
+        })),
+      })) ?? [],
+    title: event.title,
+    venueAddress: event.venueAddress,
+    venueName: event.venueName,
+  };
+}
+
+function buildInputEventLifecycleSource(
+  input: AdminEventDraft | AdminEventEditor,
+): EventLifecycleSource {
+  return {
+    city: input.city,
+    coverImageUrl: input.coverImageUrl,
+    description: input.description,
+    sessions: input.sessions.map((session) => ({
+      endsAt: session.endsAt,
+      name: session.name,
+      saleEndsAt: session.saleEndsAt,
+      saleStartsAt: session.saleStartsAt,
+      startsAt: session.startsAt,
+      tiers: session.tiers.map((tier) => ({
+        inventory: tier.inventory,
+        name: tier.name,
+        price: tier.price,
+        purchaseLimit: tier.purchaseLimit,
+        refundable: tier.refundable,
+        refundDeadlineAt: tier.refundDeadlineAt,
+        requiresRealName: tier.requiresRealName,
+        sortOrder: tier.sortOrder,
+        ticketType: tier.ticketType,
+      })),
+    })),
+    title: input.title,
+    venueAddress: input.venueAddress,
+    venueName: input.venueName,
+  };
+}
+
+function hasDifferentEventStructure(
+  currentEvent: PrismaAdminEvent,
+  input: AdminEventDraft | AdminEventEditor,
+) {
+  const currentStructure = buildEventStructure(
+    buildCurrentEventLifecycleSource(currentEvent),
+  );
+
+  const inputStructure = validateAndAnalyzeEventLifecycle(
+    buildInputEventLifecycleSource(input),
+    {
+      requireBasicInfo: true,
+      requireSaleWindows: false,
+    },
+  ).structure;
+
+  return JSON.stringify(currentStructure) !== JSON.stringify(inputStructure);
 }
 
 function buildTierCreateData(tier: AdminRegionalTierDraft) {
@@ -252,7 +564,13 @@ function buildSessionCreateData(session: AdminEventSessionDraft) {
 }
 
 function buildEventCreateData(input: AdminEventDraft) {
-  const derived = deriveEventFields(input);
+  const derived = validateAndAnalyzeEventLifecycle(
+    buildInputEventLifecycleSource(input),
+    {
+      requireBasicInfo: true,
+      requireSaleWindows: false,
+    },
+  );
 
   return {
     city: input.city,
@@ -272,7 +590,13 @@ function buildEventCreateData(input: AdminEventDraft) {
 }
 
 function buildEventUpdateData(input: AdminEventEditor) {
-  const derived = deriveEventFields(input);
+  const derived = validateAndAnalyzeEventLifecycle(
+    buildInputEventLifecycleSource(input),
+    {
+      requireBasicInfo: true,
+      requireSaleWindows: false,
+    },
+  );
 
   return {
     city: input.city,
@@ -297,6 +621,21 @@ function buildEventUpdateData(input: AdminEventEditor) {
 export class AdminEventsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async loadEventForValidation(eventId: string) {
+    const event = await this.prisma.event.findUnique({
+      select: adminEventDetailSelect,
+      where: {
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('活动不存在。');
+    }
+
+    return event as PrismaAdminEvent;
+  }
+
   async listEvents(): Promise<AdminEventListItem[]> {
     const events = await this.prisma.event.findMany({
       orderBy: {
@@ -309,8 +648,6 @@ export class AdminEventsService {
   }
 
   async createEvent(input: AdminEventDraft): Promise<AdminEventEditor> {
-    assertHasTiers(input);
-
     const event = await this.prisma.event.create({
       data: buildEventCreateData(input),
       select: adminEventDetailSelect,
@@ -323,7 +660,25 @@ export class AdminEventsService {
     eventId: string,
     input: AdminEventEditor,
   ): Promise<AdminEventEditor> {
-    assertHasTiers(input);
+    const currentEvent = await this.loadEventForValidation(eventId);
+
+    if (hasDifferentEventStructure(currentEvent, input)) {
+      const orderCount = await this.prisma.orderItem.count({
+        where: {
+          ticketTier: {
+            session: {
+              eventId,
+            },
+          },
+        },
+      });
+
+      if (orderCount > 0) {
+        throw new BadRequestException(
+          '活动已有订单，暂不支持修改场次或区域票档。',
+        );
+      }
+    }
 
     try {
       const event = await this.prisma.event.update({
@@ -359,6 +714,16 @@ export class AdminEventsService {
     eventId: string,
     published: boolean,
   ): Promise<AdminEventEditor> {
+    const currentEvent = await this.loadEventForValidation(eventId);
+
+    validateAndAnalyzeEventLifecycle(
+      buildCurrentEventLifecycleSource(currentEvent),
+      {
+        requireBasicInfo: true,
+        requireSaleWindows: true,
+      },
+    );
+
     try {
       const event = await this.prisma.event.update({
         data: {
