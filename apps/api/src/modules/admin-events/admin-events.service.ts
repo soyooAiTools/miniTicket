@@ -202,7 +202,7 @@ function normalizeListItem(event: PrismaAdminEventListRow): AdminEventListItem {
 
 function assertHasTiers(input: AdminEventDraft | AdminEventEditor) {
   if (input.sessions.some((session) => session.tiers.length === 0)) {
-    throw new BadRequestException('每个场次至少要配置一个票档。');
+    throw new BadRequestException('每个场次至少需要配置一个区域票档。');
   }
 }
 
@@ -210,7 +210,7 @@ function deriveEventFields(input: AdminEventDraft | AdminEventEditor) {
   const tiers = input.sessions.flatMap((session) => session.tiers);
 
   if (tiers.length === 0) {
-    throw new BadRequestException('每个场次至少要配置一个票档。');
+    throw new BadRequestException('每个场次至少需要配置一个区域票档。');
   }
 
   return {

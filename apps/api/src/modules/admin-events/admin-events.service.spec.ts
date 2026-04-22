@@ -329,7 +329,7 @@ describe('AdminEventsService', () => {
         venueAddress: 'No. 3000 Longteng Avenue',
         venueName: 'West Bund Arena',
       }),
-    ).rejects.toThrow('每个场次至少要配置一个票档。');
+    ).rejects.toThrow('每个场次至少需要配置一个区域票档。');
     expect(prismaMock.event.create).not.toHaveBeenCalled();
   });
 
