@@ -3,11 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from './app/AdminLayout';
 import { AdminLoginPage } from './app/AdminLoginPage';
 import { RequireAdminAuth } from './app/RequireAdminAuth';
-import {
-  AdminDashboardPage,
-  AdminDetailPage,
-  AdminSectionPage,
-} from './app/admin-workspace-pages';
+import { AdminDetailPage, AdminSectionPage } from './app/admin-workspace-pages';
+import { DashboardPage } from './pages/dashboard';
 
 export function AppRouter() {
   return (
@@ -16,7 +13,7 @@ export function AppRouter() {
       <Route element={<RequireAdminAuth />}>
         <Route element={<AdminLayout />} path='/'>
           <Route index element={<Navigate replace to='/dashboard' />} />
-          <Route element={<AdminDashboardPage />} path='dashboard' />
+          <Route element={<DashboardPage />} path='dashboard' />
           <Route
             element={
               <AdminSectionPage

@@ -10,7 +10,6 @@ import {
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAdminAuth } from './admin-auth-context';
-import { DashboardPage } from '../pages/dashboard';
 
 const { Content, Header, Sider } = Layout;
 
@@ -117,7 +116,7 @@ export function AdminLayout() {
                 message='管理员会话加载失败'
               />
             ) : null}
-            {location.pathname === '/dashboard' ? <DashboardPage /> : <Outlet />}
+            <Outlet />
           </div>
         </Content>
       </Layout>
