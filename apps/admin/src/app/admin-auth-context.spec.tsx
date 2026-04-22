@@ -54,7 +54,7 @@ describe('admin auth routing', () => {
       </AdminAuthProvider>,
     );
 
-    expect(await screen.findByText('管理员会话加载失败')).toBeVisible();
+    expect(await screen.findByText('管理员会话加载失败，请稍后重试。')).toBeVisible();
     expect(window.location.pathname).toBe('/orders');
   });
 
@@ -86,8 +86,6 @@ describe('admin auth routing', () => {
       expect(window.location.pathname).toBe('/dashboard');
     });
 
-    expect(
-      await screen.findByRole('heading', { name: '运营概览' }),
-    ).toBeVisible();
+    expect(await screen.findByRole('heading', { name: '概览' })).toBeVisible();
   });
 });

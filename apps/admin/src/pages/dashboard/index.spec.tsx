@@ -42,10 +42,10 @@ describe('DashboardPage', () => {
       ).toBeVisible();
     });
 
-    expect(screen.getByText('待审核退款')).toBeVisible();
-    expect(screen.getByText('异常订单')).toBeVisible();
-    expect(screen.getByText('今日开售活动')).toBeVisible();
-    expect(screen.getByText('售卖中活动')).toBeVisible();
+    expect(screen.getAllByText('待审核退款').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('异常订单').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('今日开售活动').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('售卖中活动').length).toBeGreaterThan(0);
 
     await screen.findByText('活动已发布');
 

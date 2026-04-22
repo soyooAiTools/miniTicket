@@ -36,14 +36,33 @@ function installMatchMediaMock() {
   });
 }
 
+function installGetComputedStyleMock() {
+  const original = window.getComputedStyle.bind(window);
+  const mock = vi.fn((element: Element) => original(element));
+
+  Object.defineProperty(window, 'getComputedStyle', {
+    configurable: true,
+    writable: true,
+    value: mock,
+  });
+
+  Object.defineProperty(globalThis, 'getComputedStyle', {
+    configurable: true,
+    writable: true,
+    value: mock,
+  });
+}
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   installMatchMediaMock();
+  installGetComputedStyleMock();
 });
 
 installMatchMediaMock();
+installGetComputedStyleMock();
 
 if (!globalThis.ResizeObserver) {
   class ResizeObserverMock {

@@ -146,6 +146,58 @@ a {
   color: #6f7890;
 }
 
+.admin-users {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-users__panel {
+  border: 1px solid rgba(22, 34, 58, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 32px rgba(18, 30, 48, 0.06);
+}
+
+.admin-users__panel .ant-card-body {
+  padding: 16px;
+}
+
+.admin-users__panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-users__panel-title {
+  margin: 0 !important;
+  color: #152033 !important;
+}
+
+.admin-users__panel-subtitle {
+  color: #677183;
+  font-size: 13px;
+}
+
+.admin-users__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.admin-users__form-grid .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.admin-users__form-actions {
+  margin-top: 4px;
+}
+
+.admin-users__table .ant-table-tbody > tr > td {
+  vertical-align: top;
+}
+
 .admin-page {
   display: grid;
   gap: 16px;
@@ -529,5 +581,15 @@ a {
 
   .admin-dashboard__queue-meta {
     align-items: flex-start;
+  }
+
+  .admin-page__header,
+  .admin-users__panel-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-users__form-grid {
+    grid-template-columns: 1fr;
   }
 }

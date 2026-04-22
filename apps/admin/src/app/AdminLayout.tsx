@@ -36,7 +36,10 @@ function getSectionKey(pathname: string) {
 }
 
 function getSectionLabel(pathname: string) {
-  return navEntries.find((entry) => entry.key === getSectionKey(pathname))?.label ?? '概览';
+  return (
+    navEntries.find((entry) => entry.key === getSectionKey(pathname))?.label ??
+    '概览'
+  );
 }
 
 export function AdminLayout() {
@@ -45,7 +48,7 @@ export function AdminLayout() {
   const { authError, logout, session } = useAdminAuth();
   const selectedKey = getSectionKey(location.pathname);
   const sectionLabel = getSectionLabel(location.pathname);
-  const userLabel = session?.user.name ?? (authError ? '会话降级' : '未命名管理员');
+  const userLabel = session?.user.name ?? (authError ? '会话异常' : '未命名管理员');
 
   async function handleLogout() {
     await logout();

@@ -46,13 +46,13 @@ function parseApproveRefundBody(body: unknown): ApproveRefundBody {
 
 function parseRejectRefundBody(body: unknown): RejectRefundBody {
   if (!body || typeof body !== 'object') {
-    throw new BadRequestException('椹冲洖鍘熷洜涓嶈兘涓虹┖銆?);
+    throw new BadRequestException('退款驳回信息不完整。');
   }
 
   const reason = (body as { reason?: unknown }).reason;
 
   if (typeof reason !== 'string' || !reason.trim()) {
-    throw new BadRequestException('椹冲洖鍘熷洜涓嶈兘涓虹┖銆?);
+    throw new BadRequestException('退款驳回原因不能为空。');
   }
 
   return {

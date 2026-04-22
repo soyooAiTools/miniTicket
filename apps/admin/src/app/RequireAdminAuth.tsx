@@ -1,5 +1,5 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAdminAuth } from './admin-auth-context';
 

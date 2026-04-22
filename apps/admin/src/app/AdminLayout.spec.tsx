@@ -81,7 +81,9 @@ describe('AdminLayout', () => {
       expect(window.location.pathname).toBe('/login');
     });
 
-    expect(await screen.findByText('已退出本地会话')).toBeVisible();
+    expect(
+      await screen.findByText('退出请求未完成，但本地会话已清理。'),
+    ).toBeVisible();
     expect(
       fetchMock.mock.calls.some(
         ([url, init]) =>

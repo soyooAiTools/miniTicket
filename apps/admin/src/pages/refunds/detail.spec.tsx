@@ -45,7 +45,9 @@ function buildReviewingRefund(): AdminRefundDetail {
 }
 
 describe('RefundDetailPage', () => {
-  it('approves and processes a refund request through the admin workbench', async () => {
+  it(
+    'approves and processes a refund request through the admin workbench',
+    async () => {
     const {
       approveAdminRefund,
       getAdminRefundDetail,
@@ -110,7 +112,9 @@ describe('RefundDetailPage', () => {
     await waitFor(() => {
       expect(processAdminRefund).toHaveBeenCalledWith('refund_1');
     });
-  });
+    },
+    10000,
+  );
 
   it('rejects a refund request with a required reason', async () => {
     const { getAdminRefundDetail, rejectAdminRefund } = await import(

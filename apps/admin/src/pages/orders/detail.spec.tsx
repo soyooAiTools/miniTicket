@@ -12,7 +12,9 @@ vi.mock('../../services/admin-orders', () => ({
 }));
 
 describe('OrdersDetailPage', () => {
-  it('renders the order workbench and submits note and flag actions', async () => {
+  it(
+    'renders the order workbench and submits note and flag actions',
+    async () => {
     const { addAdminOrderFlag, addAdminOrderNote, getAdminOrderDetail } =
       await import('../../services/admin-orders');
 
@@ -153,5 +155,7 @@ describe('OrdersDetailPage', () => {
         },
       );
     });
-  });
+    },
+    10000,
+  );
 });

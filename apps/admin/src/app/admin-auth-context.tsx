@@ -32,11 +32,7 @@ function formatSessionError(error: unknown) {
   return '管理员会话加载失败，请检查网络后重试。';
 }
 
-function formatLogoutError(error: unknown) {
-  if (error instanceof AdminRequestError) {
-    return '退出请求未完成，但本地会话已清理。';
-  }
-
+function formatLogoutError() {
   return '退出请求未完成，但本地会话已清理。';
 }
 
@@ -96,8 +92,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await logoutRequest();
-    } catch (error) {
-      setLogoutError(formatLogoutError(error));
+    } catch {
+      setLogoutError(formatLogoutError());
     }
   }
 
