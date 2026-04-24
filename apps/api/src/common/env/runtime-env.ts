@@ -54,11 +54,19 @@ function parseEnvContent(content: string) {
 }
 
 function buildCandidatePaths(cwd: string) {
+  const nodeEnv = process.env.NODE_ENV;
+  const envSuffix = nodeEnv === 'production' ? 'prod' : 'dev';
+
   return [
+    join(cwd, `.env.${envSuffix}`),
     join(cwd, '.env'),
+    join(cwd, `apps/api/.env.${envSuffix}`),
+    join(cwd, 'apps/api/.env'),
     join(cwd, 'apps/api/prisma/.env'),
     join(cwd, 'prisma/.env'),
+    resolve(cwd, `../.env.${envSuffix}`),
     resolve(cwd, '../.env'),
+    resolve(cwd, `../../.env.${envSuffix}`),
     resolve(cwd, '../../.env'),
   ];
 }
