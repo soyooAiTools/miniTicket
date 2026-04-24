@@ -14,4 +14,9 @@ export class HealthController {
 	ping() {
 		return { pong: true, username: "xxxx" };
 	}
+
+	@Get("time")
+	time() {
+		return { time: new Date().toISOString() };
+	}
 }
