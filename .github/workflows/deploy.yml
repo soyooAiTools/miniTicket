@@ -9,6 +9,7 @@ on:
       - 'packages/contracts/**'
       - '.env.prod'
       - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
