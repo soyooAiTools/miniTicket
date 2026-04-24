@@ -10,13 +10,8 @@ export class HealthController {
 		};
 	}
 
-	@Get("ping")
-	ping() {
-		return { pong: true, username: "xxxx" };
-	}
-
 	@Get("time")
 	time() {
-		return { time: new Date().toISOString() };
+		return { time: new Date().toISOString(), ping: true };
 	}
 }
