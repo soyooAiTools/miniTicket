@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'miniticket-api',
-      script: 'dist/main.js',
+      script: 'dist/apps/api/src/main.js',
       cwd: '/opt/miniTicket/apps/api',
       instances: 1,
       env_production: {
