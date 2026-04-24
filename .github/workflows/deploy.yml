@@ -28,7 +28,7 @@ jobs:
             set -e
             cd /opt/miniTicket
 
-            GIT_SSH_COMMAND="ssh -F /dev/null -p 443 -o HostName=ssh.github.com" git pull origin main
+            git pull origin main
 
             pnpm install --frozen-lockfile
 
