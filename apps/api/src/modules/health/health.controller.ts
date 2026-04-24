@@ -12,6 +12,6 @@ export class HealthController {
 
 	@Get("time")
 	time() {
-		return { time: new Date().toISOString(), ping: true };
+		return { time: new Date().toISOString(), ping: true, version: '1.0.1' };
 	}
 }
