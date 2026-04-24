@@ -32,6 +32,8 @@ jobs:
 
             pnpm install --frozen-lockfile
 
+            cp apps/api/.env.prod apps/api/.env
+
             pnpm --filter api prisma:generate
             NODE_ENV=production pnpm --filter api prisma:migrate deploy
 
