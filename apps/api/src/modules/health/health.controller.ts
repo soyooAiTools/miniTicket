@@ -9,4 +9,9 @@ export class HealthController {
       service: 'authorized-ticketing-api',
     };
   }
+
+  @Get('ping')
+  ping() {
+    return { pong: true };
+  }
 }
