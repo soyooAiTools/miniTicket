@@ -25,20 +25,4 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            set -e
-            cd /opt/miniTicket
-
-            git pull origin main
-
-            pnpm install --frozen-lockfile
-
-            cp apps/api/.env.prod apps/api/.env
-
-            pnpm --filter api prisma:generate
-            NODE_ENV=production pnpm --filter api exec prisma migrate deploy
-
-            pnpm --filter api build
-
-            pm2 restart miniticket-api || pm2 start apps/api/ecosystem.config.js --env production
-            pm2 save
+          script: bash /opt/deploy-wechat-mini-back.sh
