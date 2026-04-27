@@ -1,3 +1,4 @@
+// entrypoint
 import 'reflect-metadata';
 import './common/env/register-runtime-env';
 

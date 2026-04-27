@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>miniTicket 小程序交互逻辑图</title>
+  <style>
+    :root {
+      --bg: #f3f7fc;
+      --panel: rgba(255, 255, 255, 0.92);
+      --line: #c9d6ea;
+      --ink: #162033;
+      --muted: #607089;
+      --primary: #2d5b9f;
+      --accent: #6f8bb5;
+      --good: #2f7d62;
+      --warn: #b7791f;
+      --soft: #eaf1fb;
+      --soft-2: #f7fafc;
+      --shadow: 0 24px 60px rgba(80, 108, 156, 0.12);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(120, 159, 214, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(203, 217, 240, 0.45), transparent 24%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    .wrap {
+      max-width: 1500px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero, .panel {
+      background: var(--panel);
+      border: 1px solid rgba(194, 208, 232, 0.9);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px 32px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.18;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 980px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--soft-2);
+      color: var(--muted);
+      font-size: 13px;
+      border: 1px solid rgba(201, 214, 234, 0.9);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot-real { background: var(--good); }
+    .dot-mock { background: var(--warn); }
+    .dot-ui { background: var(--primary); }
+
+    .panel {
+      padding: 26px;
+    }
+
+    .panel-title {
+      margin: 0 0 18px;
+      font-size: 20px;
+    }
+
+    .flow-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .lane {
+      background: linear-gradient(180deg, rgba(249, 252, 255, 0.94), rgba(241, 246, 253, 0.86));
+      border: 1px solid rgba(204, 216, 236, 0.95);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .lane-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(210, 221, 238, 0.95);
+      padding-bottom: 12px;
+    }
+
+    .lane-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .lane-header span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nodes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .node {
+      position: relative;
+      min-height: 156px;
+      padding: 16px 16px 18px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(206, 217, 235, 0.95);
+      display: grid;
+      gap: 10px;
+    }
+
+    .node::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: calc(50% - 14px);
+      color: #94a7c7;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .nodes .node:last-child::after,
+    .nodes .node.break::after {
+      content: "";
+    }
+
+    .node-title {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .node-sub {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .node ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+
+    .badge-real {
+      background: rgba(47, 125, 98, 0.12);
+      color: var(--good);
+      border-color: rgba(47, 125, 98, 0.18);
+    }
+
+    .badge-mock {
+      background: rgba(183, 121, 31, 0.12);
+      color: var(--warn);
+      border-color: rgba(183, 121, 31, 0.18);
+    }
+
+    .badge-ui {
+      background: rgba(45, 91, 159, 0.12);
+      color: var(--primary);
+      border-color: rgba(45, 91, 159, 0.16);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px;
+    }
+
+    .notes {
+      display: grid;
+      gap: 12px;
+    }
+
+    .note {
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(206, 217, 235, 0.95);
+      padding: 16px 18px;
+    }
+
+    .note h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .note p, .note li {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    .note ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .branch {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .branch-card {
+      border-radius: 20px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(206, 217, 235, 0.95);
+    }
+
+    .branch-card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .branch-card p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1200px) {
+      .nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .node::after { content: ""; }
+      .split { grid-template-columns: 1fr; }
+      .branch { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 16px; }
+      .nodes { grid-template-columns: 1fr; }
+      h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <span class="eyebrow">miniTicket · 小程序端完整流程图</span>
+      <h1>小程序全页面交互逻辑原型图</h1>
+      <p>
+        这张图按“交接版”来画：主线用当前仓库已经实现的业务链路，关键节点额外标注
+        <strong>showcase 假数据</strong>、<strong>mock 支付</strong>、
+        <strong>已接真实接口</strong>。适合拿给研发、测试和产品一起对齐“现状”和“真实联调边界”。
+      </p>
+      <div class="legend">
+        <span class="chip"><i class="dot dot-real"></i>已接真实接口 / 已有后端请求</span>
+        <span class="chip"><i class="dot dot-mock"></i>开发态默认走 showcase 或 mock 分支</span>
+        <span class="chip"><i class="dot dot-ui"></i>页面跳转 / 展示层交互</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">一、主入口与浏览路径</h2>
+      <div class="flow-grid">
+        <div class="lane">
+          <div class="lane-header">
+            <h2>入口导航</h2>
+            <span>底部导航：首页 / 订单 / 我的</span>
+          </div>
+          <div class="nodes">
+            <article class="node">
+              <div class="node-title">首页 `pages/home`</div>
+              <div class="node-sub">演出列表主入口，点击卡片进入演出详情。</div>
+              <ul>
+                <li>默认开发态优先走 showcase 海报与演出数据</li>
+                <li>关闭 showcase 后请求 `/catalog/events`</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-ui">页面入口</span>
+                <span class="badge badge-mock">默认 showcase</span>
+                <span class="badge badge-real">真实接口已接</span>
+              </div>
+            </article>
+
+            <article class="node">
+              <div class="node-title">演出详情 `pages/event-detail`</div>
+              <div class="node-sub">查看场次、区域票档、状态与购票规则。</div>
+              <ul>
+                <li>默认开发态优先走 showcase 详情</li>
+                <li>关闭 showcase 后请求 `/catalog/events/:id`</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-ui">从首页进入</span>
+                <span class="badge badge-mock">默认 showcase</span>
+                <span class="badge badge-real">真实接口已接</span>
+              </div>
+            </article>
+
+            <article class="node">
+              <div class="node-title">观演人列表 `pages/viewers`</div>
+              <div class="node-sub">既是“我的常用入口”，也是购票选择观演人的中间页。</div>
+              <ul>
+                <li>正常模式先 `ensureSession()`</li>
+                <li>真实请求 `/viewers`</li>
+                <li>开发态也可用 showcase 观演人</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-ui">详情页跳转</span>
+                <span class="badge badge-mock">默认可被 showcase 短路</span>
+                <span class="badge badge-real">真实接口已接</span>
+              </div>
+            </article>
+
+            <article class="node break">
+              <div class="node-title">新增观演人 `pages/viewers/form`</div>
+              <div class="node-sub">从观演人页进入，提交后回到观演人列表。</div>
+              <ul>
+                <li>真实模式请求 `/viewers` 创建</li>
+                <li>属于下单前的必要资料补充页</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-ui">表单页</span>
+                <span class="badge badge-real">真实接口已接</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">二、正常购票主流程</h2>
+      <div class="flow-grid">
+        <div class="lane">
+          <div class="lane-header">
+            <h2>从选票到支付完成</h2>
+            <span>主链路已经有真实请求层，但默认支付可走 mock</span>
+          </div>
+          <div class="nodes">
+            <article class="node">
+              <div class="node-title">选择票档</div>
+              <div class="node-sub">在演出详情页选择场次和区域票档。</div>
+              <ul>
+                <li>点击“选择观演人”进入下一页</li>
+                <li>这里还是前端页面态，不发请求</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-ui">本地状态切换</span>
+              </div>
+            </article>
+
+            <article class="node">
+              <div class="node-title">选择观演人</div>
+              <div class="node-sub">选择一个或多个观演人，带上 `tierId / ticketType / viewerIds` 进入结算页。</div>
+              <ul>
+                <li>无数据时可先新增观演人</li>
+                <li>支持从“我的”单独进入维护</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-ui">跳转到结算页</span>
+              </div>
+            </article>
+
+            <article class="node">
+              <div class="node-title">确认支付 `pages/checkout`</div>
+              <div class="node-sub">真正开始打后端的核心页面。</div>
+              <ul>
+                <li>创建草稿单：`POST /orders/draft`</li>
+                <li>生成支付意图：`POST /payments/wechat/intent`</li>
+                <li>本地保存 draft order id，支持继续支付</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-real">真实接口已接</span>
+                <span class="badge badge-ui">支付前确认</span>
+              </div>
+            </article>
+
+            <article class="node break">
+              <div class="node-title">微信支付 / mock 支付</div>
+              <div class="node-sub">调用 `startWechatPay()`，开发态可绕过真实 requestPayment。</div>
+              <ul>
+                <li>默认开发态：`TARO_APP_MOCK_WECHAT_PAY=true`</li>
+                <li>真实接入后：应走真实微信支付能力</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-mock">默认 mock 支付</span>
+                <span class="badge badge-real">真实接口入口已接</span>
+              </div>
+            </article>
+
+            <article class="node">
+              <div class="node-title">支付结果页 `pages/payment-result`</div>
+              <div class="node-sub">轮询订单状态，等待进入“可查看详情”的阶段。</div>
+              <ul>
+                <li>请求 `/orders/:id`</li>
+                <li>成功后跳转订单详情</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-real">真实接口已接</span>
+                <span class="badge badge-ui">状态轮询页</span>
+              </div>
+            </article>
+
+            <article class="node">
+              <div class="node-title">订单详情 `pages/order-detail`</div>
+              <div class="node-sub">查看订单状态、票务状态、售后入口。</div>
+              <ul>
+                <li>默认开发态可走 showcase 订单详情</li>
+                <li>关闭 showcase 后请求 `/orders/:id`</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-mock">默认 showcase</span>
+                <span class="badge badge-real">真实接口已接</span>
+              </div>
+            </article>
+
+            <article class="node break">
+              <div class="node-title">订单中心 / 我的</div>
+              <div class="node-sub">订单列表和个人中心都会展示最近订单、可售后状态和继续操作入口。</div>
+              <ul>
+                <li>默认开发态会读 showcase 订单</li>
+                <li>关闭 showcase 后请求 `/orders/my`</li>
+              </ul>
+              <div class="badges">
+                <span class="badge badge-mock">默认 showcase</span>
+                <span class="badge badge-real">真实接口已接</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="split">
+        <div class="flow-grid">
+          <div class="lane">
+            <div class="lane-header">
+              <h2>三、退款 / 售后分支</h2>
+              <span>从订单详情分叉出去，再回到订单详情</span>
+            </div>
+            <div class="nodes" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+              <article class="node">
+                <div class="node-title">进入售后页 `pages/after-sales`</div>
+                <div class="node-sub">仅订单状态允许且活动开放售后入口时可进入。</div>
+                <ul>
+                  <li>先请求 `/orders/:id` 读取订单</li>
+                  <li>根据订单状态判断是否可申请</li>
+                </ul>
+                <div class="badges">
+                  <span class="badge badge-real">真实接口已接</span>
+                </div>
+              </article>
+
+              <article class="node">
+                <div class="node-title">退款测算</div>
+                <div class="node-sub">根据原因和距开演天数，先测算服务费与退款金额。</div>
+                <ul>
+                  <li>`POST /refunds/calculate`</li>
+                  <li>显示服务费、预计退款金额</li>
+                </ul>
+                <div class="badges">
+                  <span class="badge badge-real">真实接口已接</span>
+                </div>
+              </article>
+
+              <article class="node break">
+                <div class="node-title">提交退款申请</div>
+                <div class="node-sub">提交后跳回订单详情，由订单状态反映后续进度。</div>
+                <ul>
+                  <li>`POST /refunds/request`</li>
+                  <li>订单状态会进入退款审核/处理中</li>
+                </ul>
+                <div class="badges">
+                  <span class="badge badge-real">真实接口已接</span>
+                  <span class="badge badge-ui">回跳订单详情</span>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="lane">
+            <div class="lane-header">
+              <h2>四、异常 / 失败分支</h2>
+              <span>当前代码已处理的主要异常</span>
+            </div>
+            <div class="branch">
+              <div class="branch-card">
+                <h3>登录态失效</h3>
+                <p>小程序请求层遇到 `401` 会清掉本地 session，再次调用 `ensureSession()` 重新走微信登录。</p>
+              </div>
+              <div class="branch-card">
+                <h3>旧草稿单失效</h3>
+                <p>结算页若支付意图阶段收到 `Pending order not found.`，会清本地 draft order id，重新创建草稿单再发起支付。</p>
+              </div>
+              <div class="branch-card">
+                <h3>支付状态未及时完成</h3>
+                <p>支付结果页会轮询订单；若暂时没进入可跳转状态，会提示用户稍后查看订单，不会直接丢失订单入口。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notes">
+          <div class="note">
+            <h3>现状边界</h3>
+            <ul>
+              <li>后台 `admin` 已经全面走真实 `/admin/*` 接口。</li>
+              <li>小程序也已经有真实请求层和接口路径。</li>
+              <li>但默认开发态开启了 `TARO_APP_SHOWCASE_DATA=true`，所以首页、详情、订单、我的、观演人等页面会优先走展示数据。</li>
+            </ul>
+          </div>
+
+          <div class="note">
+            <h3>为什么研发会觉得“没打通”</h3>
+            <p>
+              因为默认开发态打开后，页面层很多地方会被 showcase 数据短路，用户肉眼看到的是“页面能动”，但不一定真的正在从后端取实时数据。
+              所以更准确的说法是：<strong>请求层已写、接口已接，但默认运行态不是完整真实联调态。</strong>
+            </p>
+          </div>
+
+          <div class="note">
+            <h3>切成真实联调模式要关的开关</h3>
+            <ul>
+              <li>`TARO_APP_SHOWCASE_DATA=false`</li>
+              <li>`TARO_APP_MOCK_WECHAT_PAY=false`</li>
+              <li>补真实 `WECHAT_APP_ID / WECHAT_APP_SECRET / 支付参数`</li>
+              <li>确保 API 地址指向真实可访问环境</li>
+            </ul>
+          </div>
+
+          <div class="note">
+            <h3>适合给团队对齐的结论</h3>
+            <p>
+              这套小程序不是“完全没联接口”，而是“代码层已接接口，但默认开发态保留了 showcase/mock 便利能力”。
+              交接和联调时要先分清“开发演示流”和“真实业务流”。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

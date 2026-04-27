@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>miniTicket 小程序高保真页面原型</title>
+  <style>
+    :root {
+      --bg: #edf3fb;
+      --surface: rgba(255,255,255,0.94);
+      --surface-strong: #ffffff;
+      --line: rgba(185, 201, 224, 0.85);
+      --ink: #152033;
+      --muted: #6a7b92;
+      --blue: #315f9d;
+      --blue-2: #7294c2;
+      --blue-soft: #edf4ff;
+      --navy: #223552;
+      --success: #2f7d62;
+      --warning: #b97b20;
+      --danger: #a14949;
+      --shadow: 0 24px 80px rgba(91, 117, 157, 0.14);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(162, 187, 222, 0.35), transparent 26%),
+        radial-gradient(circle at 100% 0%, rgba(220, 231, 246, 0.8), transparent 24%),
+        linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .wrap {
+      max-width: 1680px;
+      margin: 0 auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero, .section {
+      background: var(--surface);
+      border: 1px solid rgba(197, 211, 232, 0.95);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px 30px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 1040px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #f8fbff;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .section {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .screen-card {
+      background: rgba(248, 251, 255, 0.95);
+      border: 1px solid rgba(204, 216, 235, 0.96);
+      border-radius: 26px;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .screen-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .screen-meta h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .screen-meta span {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.88);
+    }
+
+    .phone {
+      margin: 0 auto;
+      width: 320px;
+      min-height: 680px;
+      border-radius: 38px;
+      padding: 10px;
+      background: linear-gradient(180deg, #1b2536 0%, #44597a 100%);
+      box-shadow: 0 24px 60px rgba(49, 76, 115, 0.28);
+    }
+
+    .phone-shell {
+      overflow: hidden;
+      border-radius: 30px;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
+      min-height: 660px;
+      position: relative;
+    }
+
+    .status-bar {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #61718a;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      padding-top: 6px;
+    }
+
+    .page {
+      padding: 0 16px 92px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .page-title {
+      display: grid;
+      gap: 6px;
+      padding-top: 8px;
+    }
+
+    .page-title strong {
+      font-size: 28px;
+      line-height: 1.16;
+    }
+
+    .page-title span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 220px;
+      border-radius: 26px;
+      background: linear-gradient(140deg, #dce9fb 0%, #a6c0e8 45%, #4e6d95 100%);
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 0%, transparent 42%, rgba(20, 32, 51, 0.12) 58%, rgba(20, 32, 51, 0.82) 100%);
+    }
+
+    .hero-card .badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 2;
+    }
+
+    .hero-copy {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      z-index: 2;
+      color: #fff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-copy strong {
+      font-size: 25px;
+      line-height: 1.15;
+    }
+
+    .hero-copy span {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(245, 248, 255, 0.9);
+    }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 10px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(202, 214, 233, 0.96);
+      border-radius: 22px;
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .card-meta, .muted {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .ticket-row, .list-row, .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .ticket-row {
+      padding: 10px 0;
+      border-top: 1px solid rgba(220, 228, 241, 0.9);
+    }
+
+    .ticket-row:first-child,
+    .detail-row:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .price {
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .cta {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #3f6ead 0%, #2d5b9f 100%);
+      color: #fff;
+      text-align: center;
+      padding: 14px 16px;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 14px 26px rgba(49, 95, 157, 0.26);
+    }
+
+    .badge {
+      display: inline-flex;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      line-height: 1;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.9);
+      color: var(--blue);
+    }
+
+    .badge.blue {
+      background: rgba(238, 244, 255, 0.95);
+      color: var(--blue);
+      border-color: rgba(76, 115, 175, 0.18);
+    }
+
+    .badge.green {
+      background: rgba(234, 247, 241, 0.95);
+      color: var(--success);
+      border-color: rgba(47, 125, 98, 0.16);
+    }
+
+    .badge.orange {
+      background: rgba(253, 244, 229, 0.96);
+      color: var(--warning);
+      border-color: rgba(185, 123, 32, 0.16);
+    }
+
+    .badge.red {
+      background: rgba(251, 237, 237, 0.96);
+      color: var(--danger);
+      border-color: rgba(161, 73, 73, 0.16);
+    }
+
+    .nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 74px;
+      background: rgba(255,255,255,0.92);
+      border-top: 1px solid rgba(206, 217, 235, 0.95);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      padding: 10px 18px 18px;
+    }
+
+    .nav div {
+      display: grid;
+      place-items: center;
+      color: #7183a0;
+      font-size: 12px;
+      gap: 4px;
+    }
+
+    .nav div strong {
+      font-size: 13px;
+      color: inherit;
+      font-weight: 600;
+    }
+
+    .nav .active {
+      color: var(--blue);
+    }
+
+    .poster-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .poster-item {
+      overflow: hidden;
+      border-radius: 24px;
+      min-height: 185px;
+      position: relative;
+      background: linear-gradient(140deg, #dce8f7 0%, #b8cdea 48%, #55759e 100%);
+      border: 1px solid rgba(194, 208, 232, 0.95);
+    }
+
+    .poster-item::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 0%, transparent 44%, rgba(18, 31, 48, 0.18) 58%, rgba(18, 31, 48, 0.82) 100%);
+    }
+
+    .poster-copy {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 2;
+      color: #fff;
+      display: grid;
+      gap: 5px;
+    }
+
+    .poster-copy strong {
+      font-size: 22px;
+      line-height: 1.16;
+    }
+
+    .poster-copy span {
+      color: rgba(242,246,255,0.9);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .soft-panel {
+      border-radius: 22px;
+      background: rgba(250, 252, 255, 0.88);
+      border: 1px solid rgba(209, 221, 238, 0.95);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .soft-input {
+      border-radius: 14px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(204, 216, 235, 0.95);
+      padding: 12px 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 12px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .timeline-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--blue);
+      margin-top: 5px;
+    }
+
+    .page-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1450px) {
+      .section-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 16px; }
+      .section-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <span class="eyebrow">miniTicket · 全页面高保真原型</span>
+      <h1>小程序页面 UI 原型集</h1>
+      <p>
+        这套原型按“官方高级、浅色质感、海报主导、信息高效”的统一方向来做，
+        覆盖当前小程序全部主要页面。它不是线框稿，而是一套给研发、产品、运营共同对齐视觉和结构的高保真页面集合。
+      </p>
+      <div class="legend">
+        <span class="legend-item"><i class="legend-dot"></i>全中文</span>
+        <span class="legend-item"><i class="legend-dot"></i>浅色质感</span>
+        <span class="legend-item"><i class="legend-dot"></i>海报主导</span>
+        <span class="legend-item"><i class="legend-dot"></i>官方高级</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>主导航与浏览页</h2>
+          <p>首页、详情、我的，决定整体气质和信息密度。</p>
+        </div>
+      </div>
+      <div class="section-grid">
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>首页</h3>
+            <span>海报卡片流</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>演出</strong>
+                  <span>官方票务首页，多活动单列大海报流。</span>
+                </div>
+                <div class="poster-list">
+                  <div class="poster-item">
+                    <div class="badge blue" style="position:absolute;top:12px;right:12px;z-index:2;">热卖中</div>
+                    <div class="poster-copy">
+                      <strong>Aurora Arena 巡回演唱会 上海站</strong>
+                      <span>上海 · 梅赛德斯-奔驰文化中心 · 起售 ¥580</span>
+                    </div>
+                  </div>
+                  <div class="poster-item" style="background:linear-gradient(145deg,#d7e2f7 0%, #becfe9 46%, #4d6e96 100%);">
+                    <div class="badge blue" style="position:absolute;top:12px;right:12px;z-index:2;">热卖中</div>
+                    <div class="poster-copy">
+                      <strong>Midnight Signal 亚洲巡演 北京站</strong>
+                      <span>北京 · 国家体育馆 · 起售 ¥480</span>
+                    </div>
+                  </div>
+                  <div class="poster-item" style="min-height:160px;background:linear-gradient(145deg,#e1ebf9 0%, #c8d8ef 50%, #607ca1 100%);">
+                    <div class="badge orange" style="position:absolute;top:12px;right:12px;z-index:2;">待开售</div>
+                    <div class="poster-copy">
+                      <strong>银河少女限定见面会 深圳站</strong>
+                      <span>深圳 · 深圳湾体育中心 · 起售 ¥520</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="nav">
+                <div class="active"><strong>首页</strong><span>演出</span></div>
+                <div><strong>订单</strong><span>记录</span></div>
+                <div><strong>我的</strong><span>资料</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="page-note">首页以大海报卡片流为核心，不放解释型文字，用户一眼就知道这是票务列表平台。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>演出详情</h3>
+            <span>海报 + 场次票档</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="hero-card">
+                  <div class="badge blue">热卖中</div>
+                  <div class="hero-copy">
+                    <strong>Aurora Arena 巡回演唱会 上海站</strong>
+                    <span>上海 · 梅赛德斯-奔驰文化中心 · 开演 05.18 19:30 · 起售 ¥580</span>
+                  </div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">购票信息</div>
+                  <div class="grid-2">
+                    <div class="card-meta">状态<br><strong style="color:#152033;font-size:14px;">热卖中</strong></div>
+                    <div class="card-meta">售后<br><strong style="color:#152033;font-size:14px;">支持退款申请</strong></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-title">场次与票档</div>
+                  <div class="muted">05.18 周一 19:30</div>
+                  <div class="ticket-row">
+                    <div>
+                      <div class="card-title" style="font-size:14px;">内场 VIP</div>
+                      <div class="card-meta">库存 62 · 电子票</div>
+                    </div>
+                    <div class="price">¥1280</div>
+                  </div>
+                  <div class="ticket-row">
+                    <div>
+                      <div class="card-title" style="font-size:14px;">看台 A 档</div>
+                      <div class="card-meta">库存 154 · 电子票</div>
+                    </div>
+                    <div class="price">¥880</div>
+                  </div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">购票规则</div>
+                  <div class="muted">下单前请确认观演人信息与证件一致。售后入口以订单状态和活动规则为准。</div>
+                </div>
+              </div>
+              <div class="cta">选择观演人 · 看台 A 档</div>
+            </div>
+          </div>
+          <div class="page-note">详情页保留强决策信息：海报、地点、开演时间、区域票档、状态和主按钮。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>我的</h3>
+            <span>轻运营个人中心</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>我的</strong>
+                  <span>快速进入观演人、订单、规则页，不做复杂社交中心。</span>
+                </div>
+                <div class="card">
+                  <div class="grid-3">
+                    <div class="card-meta">最近订单<br><strong style="color:#152033;font-size:14px;">05.18 上海站</strong></div>
+                    <div class="card-meta">可售后<br><strong style="color:#152033;font-size:14px;">1</strong></div>
+                    <div class="card-meta">待处理<br><strong style="color:#152033;font-size:14px;">2</strong></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-title">常用入口</div>
+                  <div class="grid-2">
+                    <div class="soft-panel"><div class="card-title" style="font-size:14px;">观演人</div><div class="muted">实名资料维护</div></div>
+                    <div class="soft-panel"><div class="card-title" style="font-size:14px;">订单</div><div class="muted">查看进度与售后</div></div>
+                    <div class="soft-panel"><div class="card-title" style="font-size:14px;">购票规则</div><div class="muted">实名与退款口径</div></div>
+                    <div class="soft-panel"><div class="card-title" style="font-size:14px;">隐私政策</div><div class="muted">数据与证件说明</div></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">Aurora Arena 巡回演唱会 上海站</div>
+                      <div class="card-meta">05.18 周一 19:30</div>
+                    </div>
+                    <div class="badge blue">已出票</div>
+                  </div>
+                </div>
+              </div>
+              <div class="nav">
+                <div><strong>首页</strong><span>演出</span></div>
+                <div><strong>订单</strong><span>记录</span></div>
+                <div class="active"><strong>我的</strong><span>资料</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="page-note">我的页强调效率，不铺大段文案，让用户快速回到订单、观演人和规则页。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>购票与支付页</h2>
+          <p>承接从选人到下单支付的关键操作。</p>
+        </div>
+      </div>
+      <div class="section-grid">
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>观演人列表</h3>
+            <span>选择模式</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>选择观演人</strong>
+                  <span>已选 2 人，可继续新增或直接进入支付。</span>
+                </div>
+                <div class="card" style="background:#eff5ff;border-color:#bdd0ef;">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">林夏</div>
+                      <div class="card-meta">13800138001</div>
+                    </div>
+                    <div class="badge blue">已选中</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">周屹</div>
+                      <div class="card-meta">13800138002</div>
+                    </div>
+                    <div class="badge blue">已选中</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">沈祺</div>
+                      <div class="card-meta">13800138003</div>
+                    </div>
+                    <div class="badge">点击选择</div>
+                  </div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">新增观演人</div>
+                  <div class="muted">用于补录实名信息，提交后回到当前列表。</div>
+                </div>
+              </div>
+              <div class="cta">继续支付 · 已选 2 人</div>
+            </div>
+          </div>
+          <div class="page-note">观演人页要兼顾“资料管理”和“购票选择”两种模式，因此用选中态做明显区分。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>新增观演人</h3>
+            <span>实名表单</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>新增观演人</strong>
+                  <span>简洁填写，不做多余装饰。</span>
+                </div>
+                <div class="card">
+                  <div class="card-title">姓名</div>
+                  <div class="soft-input">请输入真实姓名</div>
+                  <div class="card-title">手机号</div>
+                  <div class="soft-input">请输入手机号</div>
+                  <div class="card-title">身份证号</div>
+                  <div class="soft-input">请输入身份证号</div>
+                  <div class="muted">提交后将用于实名购票，请保证与证件一致。</div>
+                </div>
+              </div>
+              <div class="cta">保存观演人</div>
+            </div>
+          </div>
+          <div class="page-note">表单页保持极简，避免视觉噪音，把注意力集中到实名信息输入上。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>确认支付</h3>
+            <span>支付前最后确认</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>确认支付</strong>
+                  <span>下单前再确认观演人、数量和票种信息。</span>
+                </div>
+                <div class="card">
+                  <div class="card-title">当前选择</div>
+                  <div class="detail-row">
+                    <div class="card-meta">观演人</div>
+                    <div class="card-title" style="font-size:14px;">已选 2 位</div>
+                  </div>
+                  <div class="detail-row">
+                    <div class="card-meta">数量 / 票种</div>
+                    <div class="card-title" style="font-size:14px;">2 张 · 电子票</div>
+                  </div>
+                  <div class="detail-row">
+                    <div class="card-meta">订单状态</div>
+                    <div class="badge blue">待发起支付</div>
+                  </div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">购票规则</div>
+                  <div class="muted">请确认观演人信息与证件一致。售后入口以订单状态和活动规则为准。</div>
+                </div>
+              </div>
+              <div class="cta">立即支付</div>
+            </div>
+          </div>
+          <div class="page-note">确认支付页不展示太多营销信息，核心是减少支付前犹豫和误操作。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>支付结果</h3>
+            <span>轮询过渡页</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>支付成功</strong>
+                  <span>支付完成后进入过渡页，等待订单进入可查看阶段。</span>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title">支付状态</div>
+                      <div class="card-meta">订单状态轮询中</div>
+                    </div>
+                    <div class="badge green">支付成功</div>
+                  </div>
+                </div>
+                <div class="soft-panel">
+                  <div class="timeline">
+                    <div class="timeline-item">
+                      <div class="timeline-dot"></div>
+                      <div>
+                        <div class="card-title" style="font-size:14px;">订单已创建</div>
+                        <div class="card-meta">票务订单正在同步到可查看状态。</div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-dot" style="background:#cad6e8;"></div>
+                      <div>
+                        <div class="card-title" style="font-size:14px;">准备跳转订单详情</div>
+                        <div class="card-meta">若状态未完成，会提示稍后查看。</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="cta">查看订单详情</div>
+            </div>
+          </div>
+          <div class="page-note">支付结果页的角色是平滑过渡，而不是再次解释流程。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>订单与售后页</h2>
+          <p>承接支付后状态、售后入口与退款体验。</p>
+        </div>
+      </div>
+      <div class="section-grid">
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>订单列表</h3>
+            <span>高效状态列表</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>订单</strong>
+                  <span>订单总数、待处理、可售后等摘要放在顶部。</span>
+                </div>
+                <div class="card">
+                  <div class="grid-2">
+                    <div class="card-meta">订单总数<br><strong style="color:#152033;font-size:14px;">4</strong></div>
+                    <div class="card-meta">待处理<br><strong style="color:#152033;font-size:14px;">2</strong></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">Aurora Arena 巡回演唱会 上海站</div>
+                      <div class="card-meta">MT202604200001 · 05.18 周一 19:30</div>
+                    </div>
+                    <div class="badge green">已出票</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">Blue Echo Anniversary Showcase 广州站</div>
+                      <div class="card-meta">MT202604180026 · 退款处理中</div>
+                    </div>
+                    <div class="badge orange">退款中</div>
+                  </div>
+                </div>
+              </div>
+              <div class="nav">
+                <div><strong>首页</strong><span>演出</span></div>
+                <div class="active"><strong>订单</strong><span>记录</span></div>
+                <div><strong>我的</strong><span>资料</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="page-note">订单页更像信息清单，不做复杂筛选，重点是状态一眼可见。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>订单详情</h3>
+            <span>状态与售后入口</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>订单详情</strong>
+                  <span>订单号、票种、金额、售后入口统一收在详情页。</span>
+                </div>
+                <div class="card">
+                  <div class="ticket-row" style="padding-top:0;">
+                    <div>
+                      <div class="card-title" style="font-size:15px;">Aurora Arena 巡回演唱会 上海站</div>
+                      <div class="card-meta">MT202604200001</div>
+                    </div>
+                    <div class="badge green">已出票</div>
+                  </div>
+                  <div class="detail-row">
+                    <div class="card-meta">票种</div>
+                    <div class="card-title" style="font-size:14px;">电子票</div>
+                  </div>
+                  <div class="detail-row">
+                    <div class="card-meta">金额</div>
+                    <div class="price">¥1760</div>
+                  </div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">当前进度</div>
+                  <div class="muted">电子票二维码已生成，可在开演前三小时查看入场码。</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">售后</div>
+                  <div class="muted">活动支持退款申请，可进入售后页提交申请。</div>
+                </div>
+              </div>
+              <div class="cta">申请售后</div>
+            </div>
+          </div>
+          <div class="page-note">订单详情是订单、票务状态、售后入口的统一容器，不需要再拆更多层。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>售后申请</h3>
+            <span>退款测算页</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>售后申请</strong>
+                  <span>先看可否申请，再看服务费和预计退款金额。</span>
+                </div>
+                <div class="card">
+                  <div class="card-title">售后状态</div>
+                  <div class="muted">当前支持退款申请，提交后将进入审核流程。</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">退款原因</div>
+                  <div class="grid-2">
+                    <div class="soft-panel"><div class="card-title" style="font-size:14px;">身份信息错误</div></div>
+                    <div class="soft-panel"><div class="card-title" style="font-size:14px;">其他原因</div></div>
+                  </div>
+                  <div class="card-meta">距开演天数</div>
+                  <div class="soft-input">2</div>
+                  <div class="muted">身份信息错误且距开演 3 天内申请，将按规则扣除 20% 服务费。</div>
+                </div>
+                <div class="soft-panel">
+                  <div class="grid-3">
+                    <div class="card-meta">原支付金额<br><strong style="color:#152033;font-size:14px;">¥1760</strong></div>
+                    <div class="card-meta">服务费<br><strong style="color:#152033;font-size:14px;">¥352</strong></div>
+                    <div class="card-meta">预计退款<br><strong style="color:#152033;font-size:14px;">¥1408</strong></div>
+                  </div>
+                </div>
+              </div>
+              <div class="cta">提交退款申请</div>
+            </div>
+          </div>
+          <div class="page-note">售后页重点不是讲道理，而是把规则转成用户看得懂的结果。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>规则与说明页</h2>
+          <p>保持简洁、可信、可阅读，不做营销化。</p>
+        </div>
+      </div>
+      <div class="section-grid">
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>购票规则</h3>
+            <span>规则说明</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>购票规则</strong>
+                  <span>明确实名、出票、支付和售后规则。</span>
+                </div>
+                <div class="card">
+                  <div class="card-title">实名购票</div>
+                  <div class="muted">请确保观演人信息与有效证件一致，提交后将用于订单履约和入场核验。</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">支付与出票</div>
+                  <div class="muted">支付成功不等于出票成功，平台会根据订单状态同步票务进度。</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">退款申请</div>
+                  <div class="muted">退款规则以活动说明和订单状态为准，提交申请不等于退款完成。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="page-note">规则页用卡片切段，避免一整屏大段说明造成阅读压力。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>隐私政策</h3>
+            <span>数据说明</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>隐私政策</strong>
+                  <span>证件与个人信息相关说明保持清晰可信。</span>
+                </div>
+                <div class="card">
+                  <div class="card-title">收集范围</div>
+                  <div class="muted">平台仅收集购票和实名核验所需的姓名、手机号、证件信息等必要资料。</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">使用目的</div>
+                  <div class="muted">用于完成订单履约、实名核验、售后处理以及法律法规要求的必要记录。</div>
+                </div>
+                <div class="card">
+                  <div class="card-title">保护措施</div>
+                  <div class="muted">证件等敏感数据按受控方式存储和处理，不作为营销展示用途。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="page-note">隐私页视觉上保持克制，让“可信”和“正式”优先于花哨。</div>
+        </article>
+
+        <article class="screen-card">
+          <div class="screen-meta">
+            <h3>整套原型说明</h3>
+            <span>交接版</span>
+          </div>
+          <div class="phone">
+            <div class="phone-shell">
+              <div class="status-bar">09:41</div>
+              <div class="page">
+                <div class="page-title">
+                  <strong>原型使用说明</strong>
+                  <span>给研发、产品、运营共同对齐页面方向和页面边界。</span>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">这套稿的目标</div>
+                  <div class="muted">统一页面气质、信息层级、导航关系和关键动作位置。</div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">适合用于</div>
+                  <div class="muted">前端实现、交互评审、产品复核、运营培训说明。</div>
+                </div>
+                <div class="soft-panel">
+                  <div class="card-title">不直接代表</div>
+                  <div class="muted">真实联调状态、真实支付接入结果、showcase 开关边界。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="page-note">这页不是实际小程序页面，而是给交付时说明“这套原型稿怎么使用”的附加页。</div>
+        </article>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

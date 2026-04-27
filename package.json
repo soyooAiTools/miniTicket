@@ -5,6 +5,7 @@
   "scripts": {
     "bootstrap:local": "corepack pnpm --filter api prisma:generate && corepack pnpm --filter api prisma:migrate && corepack pnpm --filter api prisma:seed",
     "dev:api": "corepack pnpm --filter api dev",
+    "prod:api": "corepack pnpm --filter api start:prod",
     "dev:api:device": "node scripts/run-api-device.mjs",
     "dev:admin": "corepack pnpm --filter admin dev",
     "dev:infra": "docker compose up -d",
